@@ -1,0 +1,6 @@
+{
+  "name": "Subtractive Synthesis Lab",
+  "description": "An interactive, auto-graded subtractive synthesis learning environment inspired by Ableton Learning Synths and classic analog hardware.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

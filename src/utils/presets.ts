@@ -1,0 +1,936 @@
+import { SynthParams, Preset, PatchMatcherChallenge, SynthDoctorTicket, BlindTestChallenge } from '../types';
+
+export const DEFAULT_SYNTH_PARAMS: SynthParams = {
+  masterVolume: 0.75,
+  
+  // VCO 1
+  vco1Waveform: 'sawtooth',
+  vco1Octave: 0,
+  vco1Semi: 0,
+  vco1Fine: 0,
+  vco1Level: 0.8,
+  vco1PulseWidth: 0.5,
+
+  // VCO 2
+  vco2Waveform: 'square',
+  vco2Octave: 0,
+  vco2Semi: 0,
+  vco2Fine: 7,
+  vco2Level: 0.4,
+  vco2PulseWidth: 0.5,
+
+  // Noise & Mix
+  noiseLevel: 0,
+  oscBalance: 0,
+
+  // VCF
+  filterCutoff: 3500,
+  filterResonance: 3,
+  filterEnvAmount: 40,
+  filterKeyTracking: 0.5,
+  filterRolloff: -24,
+
+  // Amp EG
+  ampAttack: 0.02,
+  ampDecay: 0.4,
+  ampSustain: 0.6,
+  ampRelease: 0.3,
+
+  // Filter Mod EG
+  modAttack: 0.03,
+  modDecay: 0.5,
+  modSustain: 0.2,
+  modRelease: 0.4,
+
+  // LFO
+  lfoRate: 4,
+  lfoWaveform: 'triangle',
+  lfoDepth: 0.05,
+  lfoDestination: 'pitch',
+};
+
+export const INITIAL_PRESETS: Preset[] = [
+  {
+    id: 'init-patch',
+    name: 'Init Saw (Raw)',
+    category: 'Lead',
+    description: 'A clean starting point with a single sawtooth wave, open filter, and instant gate.',
+    params: {
+      ...DEFAULT_SYNTH_PARAMS,
+      vco1Waveform: 'sawtooth',
+      vco2Level: 0,
+      filterCutoff: 16000,
+      filterResonance: 1,
+      filterEnvAmount: 0,
+      ampAttack: 0.005,
+      ampDecay: 0.2,
+      ampSustain: 1.0,
+      ampRelease: 0.1,
+      lfoDepth: 0,
+    }
+  },
+  {
+    id: 'minilogue-acid',
+    name: 'Acid Bass 303',
+    category: 'Bass',
+    description: 'Squelchy resonant lowpass sweep with fast decay and snappy filter envelope.',
+    params: {
+      ...DEFAULT_SYNTH_PARAMS,
+      vco1Waveform: 'sawtooth',
+      vco1Octave: -1,
+      vco2Level: 0,
+      filterCutoff: 650,
+      filterResonance: 12,
+      filterEnvAmount: 85,
+      filterRolloff: -24,
+      ampAttack: 0.005,
+      ampDecay: 0.25,
+      ampSustain: 0.0,
+      ampRelease: 0.08,
+      modAttack: 0.005,
+      modDecay: 0.22,
+      modSustain: 0.0,
+      modRelease: 0.1,
+      lfoDepth: 0,
+    }
+  },
+  {
+    id: 'juno-brass',
+    name: '80s Retro Brass',
+    category: 'Lead',
+    description: 'Rich dual-oscillator brass with medium attack filter swell and subtle chorus detune.',
+    params: {
+      ...DEFAULT_SYNTH_PARAMS,
+      vco1Waveform: 'sawtooth',
+      vco1Octave: 0,
+      vco2Waveform: 'sawtooth',
+      vco2Octave: 0,
+      vco2Fine: 14,
+      vco2Level: 0.7,
+      filterCutoff: 1800,
+      filterResonance: 3.5,
+      filterEnvAmount: 60,
+      ampAttack: 0.08,
+      ampDecay: 0.6,
+      ampSustain: 0.7,
+      ampRelease: 0.5,
+      modAttack: 0.12,
+      modDecay: 0.7,
+      modSustain: 0.3,
+      modRelease: 0.5,
+      lfoDepth: 0.08,
+      lfoRate: 5.5,
+      lfoDestination: 'pitch',
+    }
+  },
+  {
+    id: 'ambient-pad',
+    name: 'Lush Warm Pad',
+    category: 'Pad',
+    description: 'Slow-evolving atmospheric pad with soft attack, long release, and warm triangle sub.',
+    params: {
+      ...DEFAULT_SYNTH_PARAMS,
+      vco1Waveform: 'sawtooth',
+      vco1Octave: 0,
+      vco2Waveform: 'triangle',
+      vco2Octave: -1,
+      vco2Fine: 8,
+      vco2Level: 0.6,
+      filterCutoff: 2200,
+      filterResonance: 2,
+      filterEnvAmount: 30,
+      ampAttack: 0.8,
+      ampDecay: 1.5,
+      ampSustain: 0.85,
+      ampRelease: 1.8,
+      modAttack: 1.2,
+      modDecay: 1.8,
+      modSustain: 0.5,
+      modRelease: 1.5,
+      lfoDepth: 0.25,
+      lfoRate: 1.2,
+      lfoDestination: 'cutoff',
+    }
+  },
+  {
+    id: 'staccato-pluck',
+    name: 'Neon Cyber Pluck',
+    category: 'Pluck',
+    description: 'Ultra-percussive pluck using square and pulse tones with zero sustain.',
+    params: {
+      ...DEFAULT_SYNTH_PARAMS,
+      vco1Waveform: 'square',
+      vco1PulseWidth: 0.35,
+      vco1Octave: 1,
+      vco2Waveform: 'triangle',
+      vco2Octave: 0,
+      vco2Level: 0.5,
+      filterCutoff: 800,
+      filterResonance: 6,
+      filterEnvAmount: 70,
+      ampAttack: 0.002,
+      ampDecay: 0.18,
+      ampSustain: 0.0,
+      ampRelease: 0.15,
+      modAttack: 0.002,
+      modDecay: 0.16,
+      modSustain: 0.0,
+      modRelease: 0.12,
+      lfoDepth: 0,
+    }
+  },
+  {
+    id: 'sub-kick-808',
+    name: 'Sub Kick 808',
+    category: 'Drums',
+    description: 'Pure sine sub drop shaped by a lightning-fast pitch & amp envelope.',
+    params: {
+      ...DEFAULT_SYNTH_PARAMS,
+      vco1Waveform: 'sine',
+      vco1Octave: -2,
+      vco2Level: 0,
+      noiseLevel: 0.08,
+      filterCutoff: 400,
+      filterResonance: 1,
+      filterEnvAmount: 60,
+      ampAttack: 0.002,
+      ampDecay: 0.55,
+      ampSustain: 0.0,
+      ampRelease: 0.3,
+      modAttack: 0.001,
+      modDecay: 0.08,
+      modSustain: 0.0,
+      modRelease: 0.05,
+      lfoDepth: 0,
+    }
+  },
+  {
+    id: 'retro-sci-fi-laser',
+    name: 'Sci-Fi Siren LFO',
+    category: 'FX',
+    description: 'Extreme LFO pitch modulation sweeping up and down like a vintage raygun.',
+    params: {
+      ...DEFAULT_SYNTH_PARAMS,
+      vco1Waveform: 'sawtooth',
+      vco1Octave: 0,
+      vco2Waveform: 'square',
+      vco2Octave: 0,
+      vco2Level: 0.5,
+      filterCutoff: 6000,
+      filterResonance: 8,
+      ampAttack: 0.01,
+      ampDecay: 1.0,
+      ampSustain: 0.9,
+      ampRelease: 0.4,
+      lfoRate: 8,
+      lfoWaveform: 'sawtooth',
+      lfoDepth: 0.85,
+      lfoDestination: 'pitch',
+    }
+  }
+];
+
+// Mode C: Challenge 1 - Patch Matcher
+export const PATCH_MATCHER_CHALLENGES: PatchMatcherChallenge[] = [
+  {
+    id: 'pm-pluck',
+    title: 'Tight Synth Pluck',
+    category: 'Pluck',
+    difficulty: 'Beginner',
+    description: 'Replicate this snappy, percussive pluck. Notice the zero sustain and fast decay on both Amp and Filter envelopes.',
+    hint: 'Lower Amp Sustain to 0, set Amp Decay around 0.2s, and give the filter envelope a strong positive amount.',
+    referenceNotes: ['C4', 'G4', 'C5'],
+    referenceDuration: 0.3,
+    targetParams: {
+      ...DEFAULT_SYNTH_PARAMS,
+      vco1Waveform: 'square',
+      vco2Level: 0,
+      filterCutoff: 900,
+      filterResonance: 5,
+      filterEnvAmount: 70,
+      ampAttack: 0.005,
+      ampDecay: 0.2,
+      ampSustain: 0,
+      ampRelease: 0.15,
+      modAttack: 0.005,
+      modDecay: 0.18,
+      modSustain: 0,
+      lfoDepth: 0,
+    }
+  },
+  {
+    id: 'pm-kick',
+    title: 'Sub Kick 808',
+    category: 'Drums',
+    difficulty: 'Intermediate',
+    description: 'Create a deep, punchy sub bass drum. It relies on a low sine wave, quick attack, and zero sustain.',
+    hint: 'Use a Sine wave pitched down -2 octaves. Keep Sustain at 0, and add a tiny bit of noise for the transient click.',
+    referenceNotes: ['C2'],
+    referenceDuration: 0.6,
+    targetParams: {
+      ...DEFAULT_SYNTH_PARAMS,
+      vco1Waveform: 'sine',
+      vco1Octave: -2,
+      vco2Level: 0,
+      noiseLevel: 0.1,
+      filterCutoff: 500,
+      filterResonance: 1,
+      filterEnvAmount: 50,
+      ampAttack: 0.002,
+      ampDecay: 0.5,
+      ampSustain: 0,
+      ampRelease: 0.3,
+      lfoDepth: 0,
+    }
+  },
+  {
+    id: 'pm-pad',
+    title: 'Ambient Brass Pad',
+    category: 'Pad',
+    difficulty: 'Intermediate',
+    description: 'Match this warm, slowly opening vintage brass pad with dual detuned sawtooth waves.',
+    hint: 'Use Sawtooth on both VCO1 and VCO2 with detune (~12 cents). Increase Attack on Amp and Mod EG (~0.5s to 1s).',
+    referenceNotes: ['F3', 'A3', 'C4'],
+    referenceDuration: 2.0,
+    targetParams: {
+      ...DEFAULT_SYNTH_PARAMS,
+      vco1Waveform: 'sawtooth',
+      vco2Waveform: 'sawtooth',
+      vco2Fine: 14,
+      vco2Level: 0.7,
+      filterCutoff: 1800,
+      filterResonance: 3,
+      filterEnvAmount: 45,
+      ampAttack: 0.5,
+      ampDecay: 1.0,
+      ampSustain: 0.8,
+      ampRelease: 1.2,
+      modAttack: 0.6,
+      modDecay: 1.2,
+      modSustain: 0.4,
+      lfoDepth: 0.06,
+    }
+  },
+  {
+    id: 'pm-siren',
+    title: 'Siren LFO Alarm',
+    category: 'FX',
+    difficulty: 'Advanced',
+    description: 'Dial in this rapid sci-fi emergency alarm sound using extreme LFO modulation.',
+    hint: 'Route LFO to Pitch, set LFO Rate around 6 to 9 Hz, and crank the LFO Depth up high.',
+    referenceNotes: ['A4'],
+    referenceDuration: 2.5,
+    targetParams: {
+      ...DEFAULT_SYNTH_PARAMS,
+      vco1Waveform: 'sawtooth',
+      vco2Waveform: 'square',
+      vco2Level: 0.5,
+      filterCutoff: 7000,
+      filterResonance: 6,
+      ampAttack: 0.01,
+      ampDecay: 0.5,
+      ampSustain: 0.9,
+      ampRelease: 0.2,
+      lfoRate: 7.5,
+      lfoWaveform: 'sawtooth',
+      lfoDepth: 0.85,
+      lfoDestination: 'pitch',
+    }
+  },
+  {
+    id: 'pm-acid',
+    title: 'Resonant Acid Lead',
+    category: 'Lead',
+    difficulty: 'Advanced',
+    description: 'Shape this high-resonance sawtooth acid line that cuts through the mix.',
+    hint: 'High filter resonance (>10), low cutoff (<1000 Hz), with high filter envelope amount (>70%).',
+    referenceNotes: ['D3', 'F3', 'A3'],
+    referenceDuration: 0.8,
+    targetParams: {
+      ...DEFAULT_SYNTH_PARAMS,
+      vco1Waveform: 'sawtooth',
+      vco1Octave: -1,
+      vco2Level: 0,
+      filterCutoff: 750,
+      filterResonance: 12,
+      filterEnvAmount: 80,
+      ampAttack: 0.005,
+      ampDecay: 0.3,
+      ampSustain: 0.1,
+      ampRelease: 0.1,
+      modAttack: 0.005,
+      modDecay: 0.25,
+      modSustain: 0,
+      lfoDepth: 0,
+    }
+  },
+  {
+    id: 'pm-clav',
+    title: 'Funky Clavinet Pulse',
+    category: 'Keys',
+    difficulty: 'Intermediate',
+    description: 'Dial in this funky, reedy clavinet tone. It requires a narrow pulse width duty cycle and a tight acoustic envelope.',
+    hint: 'Select Square wave on VCO 1, squeeze Pulse Width (PWM/Shape) down to ~20%, and keep Decay short with zero Sustain.',
+    referenceNotes: ['C3', 'D#3', 'F3', 'G3'],
+    referenceDuration: 0.35,
+    targetParams: {
+      ...DEFAULT_SYNTH_PARAMS,
+      vco1Waveform: 'square',
+      vco1PulseWidth: 0.2,
+      vco2Level: 0,
+      filterCutoff: 3200,
+      filterResonance: 4.5,
+      ampAttack: 0.005,
+      ampDecay: 0.35,
+      ampSustain: 0,
+      ampRelease: 0.1,
+      modAttack: 0.005,
+      modDecay: 0.2,
+      modSustain: 0,
+      lfoDepth: 0,
+    }
+  },
+  {
+    id: 'pm-flute',
+    title: 'Warm Wooden Flute',
+    category: 'Lead',
+    difficulty: 'Beginner',
+    description: 'Recreate this pure, mellow wooden flute tone with gentle attack and warm filter cutoff.',
+    hint: 'Use a Triangle or Sine wave on VCO 1 with a soft attack (~0.08s) and a moderate filter cutoff around 2,400 Hz.',
+    referenceNotes: ['G4', 'B4', 'D5'],
+    referenceDuration: 1.2,
+    targetParams: {
+      ...DEFAULT_SYNTH_PARAMS,
+      vco1Waveform: 'triangle',
+      vco2Level: 0,
+      filterCutoff: 2400,
+      filterResonance: 1.5,
+      ampAttack: 0.08,
+      ampDecay: 0.4,
+      ampSustain: 0.8,
+      ampRelease: 0.3,
+      lfoDepth: 0.04,
+      lfoRate: 5.5,
+      lfoDestination: 'pitch',
+    }
+  },
+  {
+    id: 'pm-wind',
+    title: 'Cosmic Wind Gust',
+    category: 'FX',
+    difficulty: 'Intermediate',
+    description: 'Craft this cinematic howling wind sound created purely from sculpted white noise swept through a resonant filter.',
+    hint: 'Mute VCO 1 and VCO 2, turn up White Noise, lower the filter cutoff below 1,000 Hz, and add moderate resonance.',
+    referenceNotes: ['C3'],
+    referenceDuration: 2.5,
+    targetParams: {
+      ...DEFAULT_SYNTH_PARAMS,
+      vco1Level: 0,
+      vco2Level: 0,
+      noiseLevel: 0.75,
+      filterCutoff: 950,
+      filterResonance: 6.5,
+      ampAttack: 0.6,
+      ampDecay: 1.0,
+      ampSustain: 0.7,
+      ampRelease: 1.5,
+      lfoDestination: 'cutoff',
+      lfoDepth: 0.35,
+      lfoRate: 0.8,
+    }
+  },
+  {
+    id: 'pm-dual-lead',
+    title: 'Searing 80s Dual Lead',
+    category: 'Lead',
+    difficulty: 'Advanced',
+    description: 'Shape this stadium rock synth lead utilizing two detuned sawtooth oscillators for maximum harmonic thickness.',
+    hint: 'Blend VCO 1 and VCO 2 sawtooths, detune VCO 2 by +16 cents, and dial in a subtle filter envelope punch.',
+    referenceNotes: ['A3', 'E4', 'A4'],
+    referenceDuration: 0.9,
+    targetParams: {
+      ...DEFAULT_SYNTH_PARAMS,
+      vco1Waveform: 'sawtooth',
+      vco2Waveform: 'sawtooth',
+      vco2Level: 0.8,
+      vco2Fine: 16,
+      filterCutoff: 2800,
+      filterResonance: 3,
+      filterEnvAmount: 40,
+      ampAttack: 0.01,
+      ampDecay: 0.8,
+      ampSustain: 0.75,
+      ampRelease: 0.4,
+      modAttack: 0.01,
+      modDecay: 0.4,
+      modSustain: 0.2,
+      modRelease: 0.4,
+    }
+  },
+  {
+    id: 'pm-shimmer-pad',
+    title: 'Evolving Twilight Swell',
+    category: 'Pad',
+    difficulty: 'Advanced',
+    description: 'Construct this slowly swelling ambient pad with a long release and subtle LFO movement.',
+    hint: 'Set slow Amp Attack (>0.8s) and long Release (>1.5s), with an LFO gently undulating cutoff frequency.',
+    referenceNotes: ['F3', 'C4', 'E4', 'G4'],
+    referenceDuration: 3.0,
+    targetParams: {
+      ...DEFAULT_SYNTH_PARAMS,
+      vco1Waveform: 'sawtooth',
+      vco2Waveform: 'sawtooth',
+      vco2Level: 0.6,
+      vco2Fine: 12,
+      filterCutoff: 1400,
+      filterResonance: 3.5,
+      ampAttack: 0.9,
+      ampDecay: 1.5,
+      ampSustain: 0.85,
+      ampRelease: 2.0,
+      lfoDestination: 'cutoff',
+      lfoDepth: 0.25,
+      lfoRate: 1.2,
+    }
+  }
+];
+
+// Mode C: Challenge 2 - Synth Doctor
+export const SYNTH_DOCTOR_TICKETS: SynthDoctorTicket[] = [
+  {
+    id: 'sd-1',
+    ticketNumber: 101,
+    title: 'Unending Bass Drone',
+    clientComplaint: "The bass note won't stop playing when I let go of the keys! It just drones on forever in my recording.",
+    diagnosticClue: "Check the Amp Envelope. What parameter tells the amplifier how long sound lingers after key release?",
+    brokenParams: {
+      ...DEFAULT_SYNTH_PARAMS,
+      vco1Octave: -1,
+      ampAttack: 0.01,
+      ampDecay: 0.3,
+      ampSustain: 0.8,
+      ampRelease: 5.5, // The bug: extreme release
+    },
+    paramKey: 'ampRelease',
+    targetMax: 0.6,
+    fixExplanation: "Great job! Lowering the Amp Release allows notes to silence cleanly as soon as you let go.",
+    recommendedTheme: 'studio-retro',
+  },
+  {
+    id: 'sd-2',
+    ticketNumber: 102,
+    title: 'Muffled Underwater Lead',
+    clientComplaint: "The synth lead sounds completely muffled and underwater! There are no high frequencies or brightness at all.",
+    diagnosticClue: "Look at the VCF (Filter) section. If the cutoff frequency is choked down to low frequencies, high harmonics cannot pass.",
+    brokenParams: {
+      ...DEFAULT_SYNTH_PARAMS,
+      vco1Waveform: 'sawtooth',
+      filterCutoff: 120, // The bug: cutoff choked
+      filterResonance: 1,
+      filterEnvAmount: 0,
+    },
+    paramKey: 'filterCutoff',
+    targetMin: 2500,
+    fixExplanation: "Spot on! Opening the Filter Cutoff restored all the bright harmonics from the sawtooth oscillator.",
+    recommendedTheme: 'hardware-bench',
+  },
+  {
+    id: 'sd-3',
+    ticketNumber: 103,
+    title: 'Seasick Wavering Melody',
+    clientComplaint: "My melody is wavering completely out of tune like a warped cassette tape! It won't stay on pitch.",
+    diagnosticClue: "Check the LFO modulation section. Is an LFO sending extreme vibrato depth to oscillator pitch?",
+    brokenParams: {
+      ...DEFAULT_SYNTH_PARAMS,
+      lfoDestination: 'pitch',
+      lfoDepth: 0.75, // The bug: huge pitch LFO depth
+      lfoRate: 5,
+    },
+    paramKey: 'lfoDepth',
+    targetMax: 0.12,
+    fixExplanation: "Excellent diagnosis! Reducing or zeroing out the LFO Pitch Depth locked the oscillators back in tune.",
+    recommendedTheme: 'studio-retro',
+  },
+  {
+    id: 'sd-4',
+    ticketNumber: 104,
+    title: 'The Ghost Organ',
+    clientComplaint: "I need a rock organ chord that holds steady, but the sound dies out into silence within half a second even while I hold the keys!",
+    diagnosticClue: "Check the Amp Sustain level. If Sustain is 0, the sound will decay to zero volume while keys are held down.",
+    brokenParams: {
+      ...DEFAULT_SYNTH_PARAMS,
+      vco1Waveform: 'square',
+      ampAttack: 0.01,
+      ampDecay: 0.3,
+      ampSustain: 0.0, // The bug: sustain at 0
+    },
+    paramKey: 'ampSustain',
+    targetMin: 0.65,
+    fixExplanation: "Solved! Raising Amp Sustain keeps the organ at full steady volume for as long as a key is pressed.",
+    recommendedTheme: 'hardware-bench',
+  },
+  {
+    id: 'sd-5',
+    ticketNumber: 105,
+    title: 'Ear-Piercing Feedback Shriek',
+    clientComplaint: "Whenever I play higher notes, the synth lets out an excruciating high-pitched screaming squeal!",
+    diagnosticClue: "Examine the Filter Resonance (Q). Self-oscillating high resonance creates an intense harmonic spike.",
+    brokenParams: {
+      ...DEFAULT_SYNTH_PARAMS,
+      filterCutoff: 3200,
+      filterResonance: 18.5, // The bug: extreme resonance
+    },
+    paramKey: 'filterResonance',
+    targetMax: 6,
+    fixExplanation: "Well done! Taming the filter resonance eliminated the harsh self-oscillation howl.",
+    recommendedTheme: 'studio-retro',
+  },
+  {
+    id: 'sd-6',
+    ticketNumber: 106,
+    title: 'Sluggish Lagging Brass',
+    clientComplaint: "When I hit a key on beat, the sound takes forever to fade in! I can't play rhythms or fast chords.",
+    diagnosticClue: "Check the Amp Attack time. A high attack value creates a long fade-in swell instead of instant punch.",
+    brokenParams: {
+      ...DEFAULT_SYNTH_PARAMS,
+      ampAttack: 2.8, // The bug: very slow attack
+      ampDecay: 0.5,
+      ampSustain: 0.8,
+    },
+    paramKey: 'ampAttack',
+    targetMax: 0.08,
+    fixExplanation: "Fixed! Lowering Amp Attack delivers crisp, immediate note starts synced to your keystrokes.",
+    recommendedTheme: 'hardware-bench',
+  },
+  {
+    id: 'sd-7',
+    ticketNumber: 107,
+    title: 'Silent Second Oscillator',
+    clientComplaint: "I am trying to create a fat dual-synth sound, but moving VCO 2 pitch controls does nothing because VCO 2 is completely silent!",
+    diagnosticClue: "Look at the Mixer / Oscillator Balance or VCO 2 Level. Is VCO 2 turned down or balance panned all the way left?",
+    brokenParams: {
+      ...DEFAULT_SYNTH_PARAMS,
+      vco1Level: 0.9,
+      vco2Level: 0.0, // The bug: vco2 level is 0
+      vco2Fine: 12,
+    },
+    paramKey: 'vco2Level',
+    targetMin: 0.4,
+    fixExplanation: "Problem solved! Turning up VCO 2 Level unlocked the rich, thick beating sound of two detuned oscillators.",
+    recommendedTheme: 'studio-retro',
+  },
+  {
+    id: 'sd-8',
+    ticketNumber: 108,
+    title: 'The Piercing Buzz',
+    clientComplaint: "The producer asked for a smooth, gentle flute/whistle tone, but the synth is producing a harsh, abrasive electronic buzz!",
+    diagnosticClue: "Examine the VCO 1 Waveform. Sawtooth waves have all odd and even harmonics. Sine and Triangle waves are smooth and mellow.",
+    brokenParams: {
+      ...DEFAULT_SYNTH_PARAMS,
+      vco1Waveform: 'sawtooth', // The bug: harsh sawtooth instead of sine/triangle
+      vco2Level: 0,
+      filterCutoff: 18000,
+    },
+    paramKey: 'vco1Waveform',
+    targetValue: 'triangle', // or sine
+    fixExplanation: "Brilliant! Switching to a Sine or Triangle wave removed the harsh harmonic buzz, creating a pure flute tone.",
+    recommendedTheme: 'hardware-bench',
+  },
+  {
+    id: 'sd-9',
+    ticketNumber: 109,
+    title: 'Insect Buzz Bass (Missing Low-End)',
+    clientComplaint: "Our bass track sounds like an annoying insect buzzing in the high treble register! There is zero low-end bass punch vibrating through the studio monitors.",
+    diagnosticClue: "Check the VCO 1 Octave switch. A bassline needs to be pitched down into the low register (-1 or -2 octaves).",
+    brokenParams: {
+      ...DEFAULT_SYNTH_PARAMS,
+      vco1Waveform: 'sawtooth',
+      vco1Octave: 1, // The bug: playing +1 octave high instead of low
+      vco2Level: 0,
+      filterCutoff: 2400,
+    },
+    paramKey: 'vco1Octave',
+    targetMax: -1,
+    fixExplanation: "Excellent diagnosis! Lowering the VCO Octave down to -1 or -2 dropped the pitch into true, room-shaking sub-bass territory.",
+    recommendedTheme: 'hardware-bench',
+  },
+  {
+    id: 'sd-10',
+    ticketNumber: 110,
+    title: 'Pencil-Thin Hollow Mosquito',
+    clientComplaint: "I selected a Square wave to build a fat retro chiptune lead, but it sounds like a pencil-thin squeak with all the body sucked out of it.",
+    diagnosticClue: "Inspect the Pulse Width (PWM/Shape) control. When the duty cycle is set to an extreme thin sliver (>90%), the warm fundamental frequency is depleted.",
+    brokenParams: {
+      ...DEFAULT_SYNTH_PARAMS,
+      vco1Waveform: 'square',
+      vco1PulseWidth: 0.94, // The bug: extremely thin pulse
+      filterCutoff: 6000,
+      vco2Level: 0,
+    },
+    paramKey: 'vco1PulseWidth',
+    targetMin: 0.35,
+    targetMax: 0.65,
+    fixExplanation: "Outstanding! Setting Pulse Width back near 50% restored the rich, full-bodied hollow acoustic tone of the classic symmetrical square wave.",
+    recommendedTheme: 'studio-retro',
+  }
+];
+
+// Mode C: Challenge 3 - A/B Blind Ear Training
+export const BLIND_TEST_CHALLENGES: BlindTestChallenge[] = [
+  {
+    id: 'ab-1',
+    question: "Which tone has high filter resonance?",
+    optionA: {
+      label: "Tone A",
+      note: "C3",
+      params: {
+        ...DEFAULT_SYNTH_PARAMS,
+        filterCutoff: 1200,
+        filterResonance: 1.2,
+      }
+    },
+    optionB: {
+      label: "Tone B",
+      note: "C3",
+      params: {
+        ...DEFAULT_SYNTH_PARAMS,
+        filterCutoff: 1200,
+        filterResonance: 12.0,
+      }
+    },
+    correctOption: 'B',
+    explanation: "Tone B features high resonance (Q), creating a sharp harmonic peak and whistle-like squelch around the cutoff frequency."
+  },
+  {
+    id: 'ab-2',
+    question: "Which tone uses a bright, buzzy Sawtooth wave?",
+    optionA: {
+      label: "Tone A",
+      note: "A3",
+      params: {
+        ...DEFAULT_SYNTH_PARAMS,
+        vco1Waveform: 'sawtooth',
+        vco2Level: 0,
+        filterCutoff: 15000,
+      }
+    },
+    optionB: {
+      label: "Tone B",
+      note: "A3",
+      params: {
+        ...DEFAULT_SYNTH_PARAMS,
+        vco1Waveform: 'sine',
+        vco2Level: 0,
+        filterCutoff: 15000,
+      }
+    },
+    correctOption: 'A',
+    explanation: "Tone A has a Sawtooth wave, which contains every integer harmonic, sounding bright and rich compared to the pure fundamental of the Sine wave."
+  },
+  {
+    id: 'ab-3',
+    question: "Which tone has a slow Amp Attack (gentle volume swell)?",
+    optionA: {
+      label: "Tone A",
+      note: "D4",
+      params: {
+        ...DEFAULT_SYNTH_PARAMS,
+        ampAttack: 0.005,
+      }
+    },
+    optionB: {
+      label: "Tone B",
+      note: "D4",
+      params: {
+        ...DEFAULT_SYNTH_PARAMS,
+        ampAttack: 0.9,
+      }
+    },
+    correctOption: 'B',
+    explanation: "Tone B fades in slowly over nearly a second, characteristic of a string or brass swell, whereas Tone A strikes immediately like a keyboard or mallet."
+  },
+  {
+    id: 'ab-4',
+    question: "Which tone has LFO pitch modulation (vibrato)?",
+    optionA: {
+      label: "Tone A",
+      note: "E4",
+      params: {
+        ...DEFAULT_SYNTH_PARAMS,
+        lfoDestination: 'pitch',
+        lfoDepth: 0.25,
+        lfoRate: 6,
+      }
+    },
+    optionB: {
+      label: "Tone B",
+      note: "E4",
+      params: {
+        ...DEFAULT_SYNTH_PARAMS,
+        lfoDepth: 0,
+      }
+    },
+    correctOption: 'A',
+    explanation: "Tone A's pitch fluctuates rhythmically at 6Hz due to the LFO modulating oscillator frequency (vibrato effect)."
+  },
+  {
+    id: 'ab-5',
+    question: "Which tone is filtered lower (darker and more muffled)?",
+    optionA: {
+      label: "Tone A",
+      note: "G3",
+      params: {
+        ...DEFAULT_SYNTH_PARAMS,
+        vco1Waveform: 'sawtooth',
+        vco2Level: 0,
+        filterCutoff: 600,
+        filterResonance: 1,
+        filterEnvAmount: 0,
+      }
+    },
+    optionB: {
+      label: "Tone B",
+      note: "G3",
+      params: {
+        ...DEFAULT_SYNTH_PARAMS,
+        vco1Waveform: 'sawtooth',
+        vco2Level: 0,
+        filterCutoff: 5000,
+        filterResonance: 1,
+        filterEnvAmount: 0,
+      }
+    },
+    correctOption: 'A',
+    explanation: "Tone A has its Low-Pass filter cutoff set to 600 Hz, stripping away all upper harmonics above that point for a warm, muffled tone."
+  },
+  {
+    id: 'ab-6',
+    question: "Which tone has a long Amp Release (lingering ring out)?",
+    optionA: {
+      label: "Tone A",
+      note: "C4",
+      params: {
+        ...DEFAULT_SYNTH_PARAMS,
+        ampAttack: 0.01,
+        ampRelease: 2.2,
+      }
+    },
+    optionB: {
+      label: "Tone B",
+      note: "C4",
+      params: {
+        ...DEFAULT_SYNTH_PARAMS,
+        ampAttack: 0.01,
+        ampRelease: 0.05,
+      }
+    },
+    correctOption: 'A',
+    explanation: "Tone A continues to ring out for over two seconds after the key is released, resembling church bell or acoustic hall resonance."
+  },
+  {
+    id: 'ab-7',
+    question: "Which tone has 2 detuned oscillators (chorus/phasing beat)?",
+    optionA: {
+      label: "Tone A",
+      note: "A2",
+      params: {
+        ...DEFAULT_SYNTH_PARAMS,
+        vco1Waveform: 'sawtooth',
+        vco2Level: 0,
+      }
+    },
+    optionB: {
+      label: "Tone B",
+      note: "A2",
+      params: {
+        ...DEFAULT_SYNTH_PARAMS,
+        vco1Waveform: 'sawtooth',
+        vco2Waveform: 'sawtooth',
+        vco2Fine: 16,
+        vco2Level: 0.8,
+      }
+    },
+    correctOption: 'B',
+    explanation: "Tone B blends two sawtooth waves tuned 16 cents apart, creating organic acoustic beating and chorus thickness."
+  },
+  {
+    id: 'ab-8',
+    question: "Which tone introduces White Noise for percussion/air?",
+    optionA: {
+      label: "Tone A",
+      note: "C3",
+      params: {
+        ...DEFAULT_SYNTH_PARAMS,
+        noiseLevel: 0.45,
+        vco1Level: 0.5,
+      }
+    },
+    optionB: {
+      label: "Tone B",
+      note: "C3",
+      params: {
+        ...DEFAULT_SYNTH_PARAMS,
+        noiseLevel: 0,
+        vco1Level: 0.8,
+      }
+    },
+    correctOption: 'A',
+    explanation: "Tone A contains white noise mixed in, adding a hissing rush of all frequencies across the audio spectrum."
+  },
+  {
+    id: 'ab-9',
+    question: "Which tone uses Pulse Width Modulation (PWM chorused shimmer)?",
+    optionA: {
+      label: "Tone A",
+      note: "A3",
+      params: {
+        ...DEFAULT_SYNTH_PARAMS,
+        vco1Waveform: 'square',
+        vco1PulseWidth: 0.5,
+        lfoDepth: 0,
+      }
+    },
+    optionB: {
+      label: "Tone B",
+      note: "A3",
+      params: {
+        ...DEFAULT_SYNTH_PARAMS,
+        vco1Waveform: 'square',
+        lfoDestination: 'pw',
+        lfoDepth: 0.5,
+        lfoRate: 1.8,
+      }
+    },
+    correctOption: 'B',
+    explanation: "Tone B uses Pulse Width Modulation (PWM), where an LFO continuously sweeps the pulse duty cycle to generate lush acoustic animation."
+  },
+  {
+    id: 'ab-10',
+    question: "Which tone has dynamic Filter Envelope Snap (EG Depth)?",
+    optionA: {
+      label: "Tone A",
+      note: "D3",
+      params: {
+        ...DEFAULT_SYNTH_PARAMS,
+        vco1Waveform: 'sawtooth',
+        filterCutoff: 500,
+        filterEnvAmount: 85,
+        modAttack: 0.005,
+        modDecay: 0.25,
+        modSustain: 0,
+      }
+    },
+    optionB: {
+      label: "Tone B",
+      note: "D3",
+      params: {
+        ...DEFAULT_SYNTH_PARAMS,
+        vco1Waveform: 'sawtooth',
+        filterCutoff: 1600,
+        filterEnvAmount: 0,
+      }
+    },
+    correctOption: 'A',
+    explanation: "Tone A uses a Filter Envelope with high EG Depth: upon key press, the cutoff frequency snaps open and closes quickly, creating a sharp percussive pluck."
+  }
+];
