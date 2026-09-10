@@ -1,3 +1,4 @@
+/// <reference types="vite/client" />
 import React, { useState } from 'react';
 
 interface MarbleWaveLogoProps {
@@ -7,12 +8,13 @@ interface MarbleWaveLogoProps {
 
 export const MarbleWaveLogo: React.FC<MarbleWaveLogoProps> = ({ className = "w-8 h-8", size = 32 }) => {
   const [imgError, setImgError] = useState(false);
+  const logoSrc = `${import.meta.env.BASE_URL.replace(/\/$/, '')}/logo.png`;
 
   if (!imgError) {
     return (
       <div className={`relative flex items-center justify-center shrink-0 rounded-xl overflow-hidden bg-slate-900 border border-slate-700/60 shadow-md ${className}`} style={{ width: size, height: size }}>
         <img
-          src="/logo.png"
+          src={logoSrc}
           alt="Subtractive Synthesis Lab Logo"
           className="w-full h-full object-cover"
           onError={() => setImgError(true)}
