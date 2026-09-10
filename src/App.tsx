@@ -14,6 +14,7 @@ import { ModeLearn } from './components/ModeLearn';
 import { ModePlayground } from './components/ModePlayground';
 import { ModeChallenges } from './components/ModeChallenges';
 import { ModeTeacher } from './components/ModeTeacher';
+import { MarbleWaveLogo } from './components/MarbleWaveLogo';
 import { getStandaloneHtml } from './utils/exportHtml';
 import {
   BookOpen,
@@ -128,22 +129,10 @@ export default function App() {
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-3">
           {/* Brand & Subtractive Lab Title */}
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-amber-700 flex items-center justify-center text-black font-bold shadow-[0_0_15px_rgba(245,158,11,0.5)]">
-              🎹
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-sm sm:text-base font-bold tracking-wider font-mono text-white">
-                  SUBTRACTIVE SYNTHESIS LAB
-                </h1>
-                <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-mono border border-amber-500/30">
-                  v2.4 PEDAGOGY
-                </span>
-              </div>
-              <p className="text-[10px] text-slate-400 font-mono">
-                Interactive Sound Design • Ableton & Minilogue Inspired
-              </p>
-            </div>
+            <MarbleWaveLogo size={48} />
+            <h1 className="text-base sm:text-lg font-bold tracking-wider font-mono text-white">
+              SUBTRACTIVE SYNTHESIS LAB
+            </h1>
           </div>
 
           {/* Core Four Modes Navigation Bar */}
