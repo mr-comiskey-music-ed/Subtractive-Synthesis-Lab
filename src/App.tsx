@@ -147,7 +147,7 @@ export default function App() {
               }`}
             >
               <BookOpen className="w-3.5 h-3.5" />
-              <span>A. Learn</span>
+              <span>Learn</span>
             </button>
 
             <button
@@ -160,7 +160,7 @@ export default function App() {
               }`}
             >
               <Gamepad2 className="w-3.5 h-3.5" />
-              <span>B. Playground</span>
+              <span>Playground</span>
             </button>
 
             <button
@@ -173,7 +173,7 @@ export default function App() {
               }`}
             >
               <Trophy className="w-3.5 h-3.5" />
-              <span>C. Challenges</span>
+              <span>Challenges</span>
             </button>
 
             <button
@@ -186,7 +186,7 @@ export default function App() {
               }`}
             >
               <GraduationCap className="w-3.5 h-3.5" />
-              <span>D. Grading</span>
+              <span>Grade Report</span>
             </button>
           </nav>
 
@@ -276,7 +276,7 @@ export default function App() {
           />
         )}
 
-        {/* Mode D: Teacher Grading & Assignment Sharing */}
+        {/* Mode D: Teacher Grade Report & Assignment Sharing */}
         {activeMode === 'teacher' && (
           <ModeTeacher
             currentParams={params}
