@@ -4,9 +4,11 @@ import {
   ThemeMode,
   AppMode,
   Preset,
+  StudentSubmission,
 } from './types';
 import { SubtractiveEngine } from './audio/synthEngine';
 import { DEFAULT_SYNTH_PARAMS, INITIAL_PRESETS } from './utils/presets';
+import { decodeSubmissionReport } from './utils/verification';
 import { StudioRetroView } from './components/StudioRetroView';
 import { MinilogueView } from './components/MinilogueView';
 import { Keyboard } from './components/Keyboard';
@@ -15,7 +17,6 @@ import { ModePlayground } from './components/ModePlayground';
 import { ModeChallenges } from './components/ModeChallenges';
 import { ModeTeacher } from './components/ModeTeacher';
 import { MarbleWaveLogo } from './components/MarbleWaveLogo';
-import { getStandaloneHtml } from './utils/exportHtml';
 import {
   BookOpen,
   Gamepad2,
@@ -30,6 +31,9 @@ import {
   Share2,
   Download,
   Info,
+  ShieldCheck,
+  AlertTriangle,
+  X,
 } from 'lucide-react';
 
 export default function App() {
@@ -39,6 +43,7 @@ export default function App() {
   const [audioStarted, setAudioStarted] = useState<boolean>(false);
   const [completedTasks, setCompletedTasks] = useState<{ taskId: string; taskTitle: string; score: number }[]>([]);
   const [highlightSection, setHighlightSection] = useState<string | null>(null);
+  const [sharedReport, setSharedReport] = useState<{ valid: boolean; submission?: StudentSubmission; error?: string } | null>(null);
 
   // URL query params tracking
   const [assignmentCode, setAssignmentCode] = useState<string>('SYNTH_LAB_01');
@@ -51,7 +56,7 @@ export default function App() {
   }
   const engine = engineRef.current;
 
-  // Initialize from URL params (e.g. shared patch, teacher assignment)
+  // Initialize from URL params (e.g. shared patch, teacher assignment, shared report)
   useEffect(() => {
     const query = new URLSearchParams(window.location.search);
     const patchData = query.get('patch');
@@ -64,6 +69,16 @@ export default function App() {
       } catch (err) {
         console.error('Failed to parse patch from URL', err);
       }
+    }
+
+    const reportParam = query.get('report');
+    if (reportParam) {
+      const decoded = decodeSubmissionReport(reportParam);
+      setSharedReport(decoded);
+      if (decoded.valid && decoded.submission) {
+        setCompletedTasks(decoded.submission.completedTasks);
+      }
+      setActiveMode('teacher');
     }
 
     const assignParam = query.get('assignment');
@@ -104,19 +119,6 @@ export default function App() {
     });
   };
 
-  const handleDownloadStandalone = () => {
-    const html = getStandaloneHtml();
-    const blob = new Blob([html], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'subtractive-synthesis-lab.html';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
-
   return (
     <div
       onClick={handleUserGesture}
@@ -147,7 +149,7 @@ export default function App() {
               }`}
             >
               <BookOpen className="w-3.5 h-3.5" />
-              <span>A. Learn</span>
+              <span>Learn</span>
             </button>
 
             <button
@@ -160,7 +162,7 @@ export default function App() {
               }`}
             >
               <Gamepad2 className="w-3.5 h-3.5" />
-              <span>B. Playground</span>
+              <span>Playground</span>
             </button>
 
             <button
@@ -173,7 +175,7 @@ export default function App() {
               }`}
             >
               <Trophy className="w-3.5 h-3.5" />
-              <span>C. Challenges</span>
+              <span>Challenges</span>
             </button>
 
             <button
@@ -186,7 +188,7 @@ export default function App() {
               }`}
             >
               <GraduationCap className="w-3.5 h-3.5" />
-              <span>D. Grading</span>
+              <span>Grade Report</span>
             </button>
           </nav>
 
@@ -206,17 +208,6 @@ export default function App() {
             >
               <Palette className="w-3.5 h-3.5" />
               <span>{theme === 'studio-retro' ? 'Retro Synth' : 'Modern Synth'}</span>
-            </button>
-
-            {/* Standalone Export Button */}
-            <button
-              type="button"
-              onClick={handleDownloadStandalone}
-              className="px-2.5 py-1 rounded-lg text-xs font-mono text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 border border-white/10 flex items-center gap-1.5 transition-colors"
-              title="Download standalone single-file index.html for offline use"
-            >
-              <Download className="w-3.5 h-3.5 text-amber-400" />
-              <span className="hidden sm:inline">Export HTML</span>
             </button>
 
             {/* Audio Engine Status */}
@@ -276,13 +267,13 @@ export default function App() {
           />
         )}
 
-        {/* Mode D: Teacher Grading & Assignment Sharing */}
+        {/* Mode D: Teacher Grade Report & Assignment Sharing */}
         {activeMode === 'teacher' && (
           <ModeTeacher
             currentParams={params}
             completedTasks={completedTasks}
             assignmentCodeFromUrl={assignmentCode}
-            tasksFromUrl={assignedTasks}
+            sharedReport={sharedReport}
           />
         )}
 
@@ -310,22 +301,6 @@ export default function App() {
           <Keyboard engine={engine} theme={theme} params={params} />
         </section>
       </main>
-
-      {/* Clean Pedagogical Footer */}
-      <footer className="border-t border-white/10 bg-black/80 px-4 py-3 text-xs text-slate-400 font-mono">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <span>Subtractive Synthesis Lab • High School Music Technology Curriculum</span>
-          </div>
-          <div className="flex items-center gap-4 text-[11px] text-slate-500">
-            <span>Tone.js Audio Engine</span>
-            <span>•</span>
-            <span>Limiter Safety Active (-1dB)</span>
-            <span>•</span>
-            <span>Zero Server / 100% Client-Side</span>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }

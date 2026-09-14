@@ -129,7 +129,7 @@ export const Knob: React.FC<KnobProps> = ({
   // Format value display
   const formatDisplay = (v: number): string => {
     if (unit === 'Hz') {
-      return v >= 1000 ? `${(v / 1000).toFixed(1)}k` : `${Math.round(v)}`;
+      return v >= 1000 ? `${(v / 1000).toFixed(1)}k` : `${v.toFixed(1)} Hz`;
     }
     if (unit === 's') {
       return v < 1 ? `${Math.round(v * 1000)}ms` : `${v.toFixed(2)}s`;

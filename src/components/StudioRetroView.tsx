@@ -7,6 +7,7 @@ import { Visualizer } from './Visualizer';
 import { FilterVisualizer } from './FilterVisualizer';
 import { AdsrVisualizer } from './AdsrVisualizer';
 import { SubtractiveEngine } from '../audio/synthEngine';
+import { WaveformIcon } from './WaveformIcons';
 
 interface StudioRetroViewProps {
   params: SynthParams;
@@ -69,10 +70,10 @@ export const StudioRetroView: React.FC<StudioRetroViewProps> = ({
                 id="retro-vco1-wave"
                 label=""
                 options={[
-                  { label: 'Saw', value: 'sawtooth', short: 'SAW' },
-                  { label: 'Square', value: 'square', short: 'SQR' },
-                  { label: 'Tri', value: 'triangle', short: 'TRI' },
-                  { label: 'Sine', value: 'sine', short: 'SIN' },
+                  { label: 'Sawtooth', value: 'sawtooth', title: 'Sawtooth', icon: <WaveformIcon type="sawtooth" /> },
+                  { label: 'Square', value: 'square', title: 'Square', icon: <WaveformIcon type="square" /> },
+                  { label: 'Triangle', value: 'triangle', title: 'Triangle', icon: <WaveformIcon type="triangle" /> },
+                  { label: 'Sine', value: 'sine', title: 'Sine', icon: <WaveformIcon type="sine" /> },
                 ]}
                 value={params.vco1Waveform}
                 theme="studio-retro"
@@ -110,18 +111,17 @@ export const StudioRetroView: React.FC<StudioRetroViewProps> = ({
                 <Knob
                   id="retro-vco1-pw"
                   label="PWM / Shape"
-                  value={params.vco1PulseWidth}
-                  min={0.1}
-                  max={0.9}
-                  step={0.01}
-                  defaultValue={0.5}
+                  value={params.vco1PulseWidth * 100}
+                  min={0}
+                  max={100}
+                  step={1}
+                  defaultValue={0}
                   unit="%"
                   theme="studio-retro"
                   section="vco"
-                  lfoModulated={params.lfoDestination === 'pw' && params.lfoDepth > 0}
                   lfoDepth={params.lfoDepth}
                   onChange={(v) => {
-                    onParamChange('vco1PulseWidth', v);
+                    onParamChange('vco1PulseWidth', v / 100);
                     if (params.vco1Waveform !== 'square') {
                       onParamChange('vco1Waveform', 'square');
                     }
@@ -139,16 +139,16 @@ export const StudioRetroView: React.FC<StudioRetroViewProps> = ({
           {/* VCO 2 */}
           <div className="p-2 rounded-lg bg-black/30 border border-amber-500/10">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-[10px] font-mono text-amber-300 font-bold">VCO 2 (Detune)</span>
+              <span className="text-[10px] font-mono text-amber-300 font-bold">VCO 2</span>
               <ToggleSwitch<WaveformType>
                 id="retro-vco2-wave"
                 label=""
                 options={[
-                  { label: 'Saw', value: 'sawtooth', short: 'SAW' },
-                  { label: 'Square', value: 'square', short: 'SQR' },
-                  { label: 'Tri', value: 'triangle', short: 'TRI' },
-                  { label: 'Sine', value: 'sine', short: 'SIN' },
-                  { label: 'Noise', value: 'noise', short: 'NOI' },
+                  { label: 'Sawtooth', value: 'sawtooth', title: 'Sawtooth', icon: <WaveformIcon type="sawtooth" /> },
+                  { label: 'Square', value: 'square', title: 'Square', icon: <WaveformIcon type="square" /> },
+                  { label: 'Triangle', value: 'triangle', title: 'Triangle', icon: <WaveformIcon type="triangle" /> },
+                  { label: 'Sine', value: 'sine', title: 'Sine', icon: <WaveformIcon type="sine" /> },
+                  { label: 'Noise', value: 'noise', title: 'Noise', icon: <WaveformIcon type="noise" /> },
                 ]}
                 value={params.vco2Waveform}
                 theme="studio-retro"
@@ -231,14 +231,14 @@ export const StudioRetroView: React.FC<StudioRetroViewProps> = ({
         {/* Module 2: VCF Filter Section */}
         <div
           id="module-filter"
-          className={`lg:col-span-3 rounded-xl p-3 border transition-all flex flex-col justify-between ${
+          className={`lg:col-span-3 rounded-xl p-2 border transition-all flex flex-col justify-between ${
             isHighlighted('filter')
               ? 'ring-2 ring-red-400 border-red-400 bg-red-500/10'
               : 'bg-[#181c24]/90 border-red-500/30'
           }`}
         >
           <div>
-            <div className="flex items-center justify-between border-b border-red-500/30 pb-1.5 mb-3">
+            <div className="flex items-center justify-between border-b border-red-500/30 pb-1.5 mb-2">
               <span className="text-xs font-mono font-bold text-red-400 tracking-wider">
                 2. LOW-PASS FILTER (VCF)
               </span>
@@ -257,7 +257,7 @@ export const StudioRetroView: React.FC<StudioRetroViewProps> = ({
             </div>
 
             {/* Cutoff & Resonance Big Knobs */}
-            <div className="flex items-center justify-around mb-4">
+            <div className="flex items-center justify-around mb-2">
               <Knob
                 id="retro-filter-cutoff"
                 label="Cutoff (Hz)"
@@ -289,7 +289,7 @@ export const StudioRetroView: React.FC<StudioRetroViewProps> = ({
             </div>
 
             {/* Env Amount & Key Tracking */}
-            <div className="flex items-center justify-around pt-2 border-t border-red-500/10">
+            <div className="flex items-center justify-around pt-1 pb-2 border-t border-red-500/10">
               <Knob
                 id="retro-filter-env"
                 label="EG Depth"
@@ -317,12 +317,14 @@ export const StudioRetroView: React.FC<StudioRetroViewProps> = ({
                 onChange={(v) => onParamChange('filterKeyTracking', v / 100)}
               />
             </div>
+
+            {/* Integrated Filter Response */}
+            <FilterVisualizer engine={engine} theme="studio-retro" height={220} />
           </div>
 
-          {/* Integrated Filter Response & Real-time Spectrometer */}
-          <div className="mt-3 space-y-3">
-            <FilterVisualizer engine={engine} theme="studio-retro" height={210} />
-            <Visualizer engine={engine} theme="studio-retro" height={250} />
+          {/* Real-time Spectrometer */}
+          <div className="mt-2">
+            <Visualizer engine={engine} theme="studio-retro" height={280} />
           </div>
         </div>
 
@@ -523,16 +525,15 @@ export const StudioRetroView: React.FC<StudioRetroViewProps> = ({
 
             {/* LFO Controls */}
             <div className="p-2 rounded-lg bg-black/30 border border-blue-500/10 mb-3">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-[10px] font-mono text-blue-300 font-bold">LFO WAVE</span>
+              <div className="flex items-center justify-end mb-2">
                 <ToggleSwitch<any>
                   id="retro-lfo-wave"
                   label=""
                   options={[
-                    { label: 'Sin', value: 'sine', short: 'SIN' },
-                    { label: 'Tri', value: 'triangle', short: 'TRI' },
-                    { label: 'Saw', value: 'sawtooth', short: 'SAW' },
-                    { label: 'Sqr', value: 'square', short: 'SQR' },
+                    { label: 'Sine', value: 'sine', title: 'Sine', icon: <WaveformIcon type="sine" /> },
+                    { label: 'Triangle', value: 'triangle', title: 'Triangle', icon: <WaveformIcon type="triangle" /> },
+                    { label: 'Sawtooth', value: 'sawtooth', title: 'Sawtooth', icon: <WaveformIcon type="sawtooth" /> },
+                    { label: 'Square', value: 'square', title: 'Square', icon: <WaveformIcon type="square" /> },
                   ]}
                   value={params.lfoWaveform}
                   theme="studio-retro"
@@ -544,7 +545,7 @@ export const StudioRetroView: React.FC<StudioRetroViewProps> = ({
               <div className="flex items-center justify-around mb-2">
                 <Knob
                   id="retro-lfo-rate"
-                  label="Rate (Hz)"
+                  label="Rate"
                   value={params.lfoRate}
                   min={0.1}
                   max={20}
@@ -578,7 +579,6 @@ export const StudioRetroView: React.FC<StudioRetroViewProps> = ({
                   options={[
                     { label: 'Pitch', value: 'pitch', short: 'PITCH' },
                     { label: 'Filter', value: 'cutoff', short: 'CUTOFF' },
-                    { label: 'PWM', value: 'pw', short: 'PW' },
                   ]}
                   value={params.lfoDestination}
                   theme="studio-retro"

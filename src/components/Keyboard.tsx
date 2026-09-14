@@ -337,20 +337,6 @@ export const Keyboard: React.FC<KeyboardProps> = ({
             Type with: <kbd className="px-1 py-0.5 rounded bg-slate-800 border border-slate-700 text-amber-300">A-W-S-E-D-F...</kbd>
           </span>
         </div>
-
-        {/* MIDI Device Detection & ADSR Status */}
-        <div className="flex items-center gap-3">
-          <span className="hidden md:inline-flex items-center gap-1.5 font-mono text-[10px] text-amber-300 bg-amber-950/40 px-2.5 py-0.5 rounded border border-amber-500/30">
-            <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-            <span>Amp EG Glow: <strong className="text-amber-300">Yellow/Gold</strong> &rarr; Top 15%: <strong className="text-red-400 font-bold">Red Peak</strong></span>
-          </span>
-          <div className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_6px_#34d399]" />
-            <span className="font-mono text-[10px] text-slate-300">
-              {midiStatus}
-            </span>
-          </div>
-        </div>
       </div>
 
       {/* Main Piano Roll Container */}

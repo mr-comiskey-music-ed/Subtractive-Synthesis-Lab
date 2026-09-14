@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import confetti from 'canvas-confetti';
 import {
   SynthParams,
@@ -44,7 +44,7 @@ export const ModeChallenges: React.FC<ModeChallengesProps> = ({
   onLoadParams,
   onRecordScore,
 }) => {
-  const [activeCategory, setActiveCategory] = useState<'matcher' | 'doctor' | 'blind'>('matcher');
+  const [activeCategory, setActiveCategory] = useState<'matcher' | 'doctor' | 'blind'>('blind');
 
   // Patch Matcher State
   const [activePatchIdx, setActivePatchIdx] = useState<number>(0);
@@ -55,6 +55,7 @@ export const ModeChallenges: React.FC<ModeChallengesProps> = ({
   const [activeTicketIdx, setActiveTicketIdx] = useState<number>(0);
   const [ticketStatus, setTicketStatus] = useState<'idle' | 'fixed' | 'failed'>('idle');
   const [ticketMessage, setTicketMessage] = useState<string | null>(null);
+  const [showDoctorModal, setShowDoctorModal] = useState<boolean>(false);
 
   // Blind Ear Training State
   const [activeBlindIdx, setActiveBlindIdx] = useState<number>(0);
@@ -62,8 +63,19 @@ export const ModeChallenges: React.FC<ModeChallengesProps> = ({
   const [blindResult, setBlindResult] = useState<boolean | null>(null);
   const [blindTotalScore, setBlindTotalScore] = useState<number>(0);
 
+  // Playback interruption helper
+  const playbackTimeoutsRef = useRef<NodeJS.Timeout[]>([]);
+
+  const stopExistingPlayback = () => {
+    playbackTimeoutsRef.current.forEach(clearTimeout);
+    playbackTimeoutsRef.current = [];
+    engine.allNotesOff();
+    engine.applyParams(params);
+  };
+
   // Reference Audio Player helper
   const playParamNotes = async (p: SynthParams, notes: string[], duration: number) => {
+    stopExistingPlayback();
     await engine.startAudioContext();
     const originalParams = engine.getParams();
 
@@ -71,31 +83,37 @@ export const ModeChallenges: React.FC<ModeChallengesProps> = ({
     engine.applyParams(p);
 
     notes.forEach((note, i) => {
-      setTimeout(() => {
+      const t1 = setTimeout(() => {
         engine.noteOn(note, 0.85);
-        setTimeout(() => {
+        const t2 = setTimeout(() => {
           engine.noteOff(note);
         }, duration * 800);
+        playbackTimeoutsRef.current.push(t2);
       }, i * (duration * 1000));
+      playbackTimeoutsRef.current.push(t1);
     });
 
     // Restore user params after playback
     const totalTime = notes.length * (duration * 1000) + 100;
-    setTimeout(() => {
+    const t3 = setTimeout(() => {
       engine.applyParams(originalParams);
     }, totalTime);
+    playbackTimeoutsRef.current.push(t3);
   };
 
   // Play Student's Current Sound
   const playCurrentSound = async (notes: string[], duration: number) => {
+    stopExistingPlayback();
     await engine.startAudioContext();
     notes.forEach((note, i) => {
-      setTimeout(() => {
+      const t1 = setTimeout(() => {
         engine.noteOn(note, 0.85);
-        setTimeout(() => {
+        const t2 = setTimeout(() => {
           engine.noteOff(note);
         }, duration * 800);
+        playbackTimeoutsRef.current.push(t2);
       }, i * (duration * 1000));
+      playbackTimeoutsRef.current.push(t1);
     });
   };
 
@@ -217,35 +235,6 @@ export const ModeChallenges: React.FC<ModeChallengesProps> = ({
         <div className="flex items-center gap-2">
           <button
             type="button"
-            onClick={() => setActiveCategory('matcher')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold uppercase transition-all flex items-center gap-1.5 ${
-              activeCategory === 'matcher'
-                ? 'bg-amber-500 text-black shadow-[0_0_12px_#f59e0b]'
-                : 'bg-slate-800 text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <Target className="w-4 h-4" />
-            1. Patch Matcher
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              setActiveCategory('doctor');
-              handleLoadTicket(activeTicketIdx);
-            }}
-            className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold uppercase transition-all flex items-center gap-1.5 ${
-              activeCategory === 'doctor'
-                ? 'bg-emerald-500 text-black shadow-[0_0_12px_#10b981]'
-                : 'bg-slate-800 text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <Stethoscope className="w-4 h-4" />
-            2. Synth Doctor ({SYNTH_DOCTOR_TICKETS.length} Tickets)
-          </button>
-
-          <button
-            type="button"
             onClick={() => setActiveCategory('blind')}
             className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold uppercase transition-all flex items-center gap-1.5 ${
               activeCategory === 'blind'
@@ -254,12 +243,38 @@ export const ModeChallenges: React.FC<ModeChallengesProps> = ({
             }`}
           >
             <Ear className="w-4 h-4" />
-            3. A/B Blind Ear Training
+            1. A/B Ear Training
           </button>
-        </div>
 
-        <div className="text-[11px] font-mono text-slate-400 pr-2">
-          Auto-Graded Learning Quests
+          <button
+            type="button"
+            onClick={() => {
+              setActiveCategory('doctor');
+              handleLoadTicket(activeTicketIdx);
+              setShowDoctorModal(true);
+            }}
+            className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold uppercase transition-all flex items-center gap-1.5 ${
+              activeCategory === 'doctor'
+                ? 'bg-emerald-500 text-black shadow-[0_0_12px_#10b981]'
+                : 'bg-slate-800 text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <Stethoscope className="w-4 h-4" />
+            2. Synth Doctor
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveCategory('matcher')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold uppercase transition-all flex items-center gap-1.5 ${
+              activeCategory === 'matcher'
+                ? 'bg-amber-500 text-black shadow-[0_0_12px_#f59e0b]'
+                : 'bg-slate-800 text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <Target className="w-4 h-4" />
+            3. Patch Master
+          </button>
         </div>
       </div>
 
@@ -269,7 +284,7 @@ export const ModeChallenges: React.FC<ModeChallengesProps> = ({
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-white/10 pb-3 mb-3">
             <div>
               <span className="text-[10px] font-mono text-amber-400 uppercase tracking-widest font-bold">
-                QUEST 1: AURAL EAR TRAINING
+                QUEST 3: PATCH MASTER
               </span>
               <h3 className="text-base font-bold text-white flex items-center gap-2">
                 <span>{currentPatch.title}</span>
@@ -279,8 +294,8 @@ export const ModeChallenges: React.FC<ModeChallengesProps> = ({
               </h3>
             </div>
 
-            {/* Patch Selector Buttons */}
-            <div className="flex items-center gap-1">
+            {/* Patch Selector Buttons & Next Button */}
+            <div className="flex items-center gap-1.5">
               {PATCH_MATCHER_CHALLENGES.map((p, idx) => (
                 <button
                   key={p.id}
@@ -299,6 +314,17 @@ export const ModeChallenges: React.FC<ModeChallengesProps> = ({
                   #{idx + 1}
                 </button>
               ))}
+              <button
+                type="button"
+                onClick={() => {
+                  setActivePatchIdx((prev) => (prev + 1) % PATCH_MATCHER_CHALLENGES.length);
+                  setMatchScore(null);
+                  setMatchFeedback(null);
+                }}
+                className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-amber-300 text-xs font-mono font-bold flex items-center gap-1 border border-white/10"
+              >
+                Next <ArrowRight className="w-3.5 h-3.5" />
+              </button>
             </div>
           </div>
 
@@ -380,7 +406,7 @@ export const ModeChallenges: React.FC<ModeChallengesProps> = ({
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-white/10 pb-3 mb-3">
             <div>
               <span className="text-[10px] font-mono text-emerald-400 uppercase tracking-widest font-bold">
-                QUEST 2: SYNTH REPAIR WORKBENCH
+                QUEST 2: SYNTH DOCTOR
               </span>
               <h3 className="text-base font-bold text-white flex items-center gap-2">
                 <span>
@@ -451,18 +477,32 @@ export const ModeChallenges: React.FC<ModeChallengesProps> = ({
           {/* Status Banner */}
           {ticketStatus !== 'idle' && (
             <div
-              className={`p-3 rounded-lg border flex items-center gap-3 ${
+              className={`p-3 rounded-lg border flex items-center justify-between gap-3 ${
                 ticketStatus === 'fixed'
                   ? 'bg-emerald-950/60 border-emerald-500/50 text-emerald-200'
                   : 'bg-red-950/60 border-red-500/50 text-red-200'
               }`}
             >
-              {ticketStatus === 'fixed' ? (
-                <CheckCircle className="w-5 h-5 text-emerald-400 flex-shrink-0" />
-              ) : (
-                <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0" />
+              <div className="flex items-center gap-3">
+                {ticketStatus === 'fixed' ? (
+                  <CheckCircle className="w-5 h-5 text-emerald-400 flex-shrink-0" />
+                ) : (
+                  <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0" />
+                )}
+                <div className="text-xs leading-relaxed">{ticketMessage}</div>
+              </div>
+              {ticketStatus === 'fixed' && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const nextIdx = (activeTicketIdx + 1) % SYNTH_DOCTOR_TICKETS.length;
+                    handleLoadTicket(nextIdx);
+                  }}
+                  className="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-black font-mono font-bold text-xs uppercase flex items-center gap-1 shadow-[0_0_10px_rgba(16,185,129,0.3)] flex-shrink-0"
+                >
+                  Next <ArrowRight className="w-3.5 h-3.5" />
+                </button>
               )}
-              <div className="text-xs leading-relaxed">{ticketMessage}</div>
             </div>
           )}
         </div>
@@ -576,6 +616,52 @@ export const ModeChallenges: React.FC<ModeChallengesProps> = ({
               </button>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Synth Doctor Instructions Modal */}
+      {showDoctorModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="relative w-full max-w-md rounded-2xl bg-slate-950 border-2 border-emerald-500/50 p-6 shadow-2xl text-slate-100 space-y-4">
+            <div className="flex items-center gap-3 border-b border-white/10 pb-4">
+              <div className="p-2.5 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-400">
+                <Stethoscope className="w-6 h-6" />
+              </div>
+              <div>
+                <span className="text-[10px] font-mono text-emerald-400 uppercase tracking-widest font-bold">
+                  QUEST INSTRUCTIONS
+                </span>
+                <h3 className="text-base font-bold text-white">How to Test Synth Doctor Patches</h3>
+              </div>
+            </div>
+
+            <p className="text-xs text-slate-300 leading-relaxed">
+              To diagnose and hear the broken synth patch, you must play notes on the keyboard!
+            </p>
+
+            <div className="p-3 rounded-lg bg-slate-900/90 border border-white/10 space-y-2 text-xs font-mono text-slate-200">
+              <div className="flex items-center gap-2">
+                <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold">1</span>
+                <span>Use your computer typing keyboard (A-K keys)</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold">2</span>
+                <span>Or click the on-screen keyboard keys</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold">3</span>
+                <span>Or plug in any USB/MIDI hardware keyboard</span>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setShowDoctorModal(false)}
+              className="w-full py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-mono font-bold text-xs uppercase shadow-[0_0_15px_rgba(16,185,129,0.4)] active:scale-95 transition-all"
+            >
+              Got It
+            </button>
+          </div>
         </div>
       )}
     </div>

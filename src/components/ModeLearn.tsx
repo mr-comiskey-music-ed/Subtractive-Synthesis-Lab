@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { ThemeMode, SynthParams } from '../types';
 import { SubtractiveEngine } from '../audio/synthEngine';
 import { AdsrVisualizer } from './AdsrVisualizer';
+import { WaveformIcon } from './WaveformIcons';
 import { CheckCircle2, ChevronRight, ChevronLeft, Volume2, Sparkles, RefreshCw } from 'lucide-react';
 
 interface ModeLearnProps {
@@ -85,9 +86,9 @@ export const ModeLearn: React.FC<ModeLearnProps> = ({
     },
     {
       stepNumber: 4,
-      title: 'Step 4: Pulse Width & PWM (Altering the Wave Symmetry)',
+      title: 'Step 4: Pulse Width Modulation (PWM) - Altering the Wave Symmetry',
       concept:
-        'A square wave is normally balanced 50% high and 50% low. Adjusting the Pulse Width changes the duty cycle: narrowing it produces a thin, nasal, reed-like tone like an oboe or funky clavinet. Modulating this continuously with an LFO produces iconic Pulse Width Modulation (PWM)!',
+        'A square wave is normally balanced 50% high and 50% low. Adjusting the Pulse Width changes the duty cycle: narrowing it produces a thin, nasal, reed-like tone like an oboe or funky clavinet. Modulating this continuously with an LFO produces iconic Pulse Width Modulation (PWM)! By viewing that oscillator on the oscilloscope visualizer, you will be able to see the actual shape change in real time as you adjust the pulse width.',
       themeTarget: 'hardware-bench',
       highlightSection: 'vco',
       goalDescription:
@@ -277,6 +278,26 @@ export const ModeLearn: React.FC<ModeLearnProps> = ({
         <p className="text-sm text-slate-200 leading-relaxed mb-4 max-w-4xl">
           {currentStep.concept}
         </p>
+
+        {/* Step 1 Waveform Reference Guide */}
+        {currentStep.stepNumber === 1 && (
+          <div className="mb-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {[
+              { type: 'sawtooth', name: 'Sawtooth', desc: 'All integer harmonics. Rich, bright, buzzing tone for brass and leads.' },
+              { type: 'square', name: 'Square', desc: 'Odd harmonics only. Hollow, wooden, clarinet or pulse character.' },
+              { type: 'triangle', name: 'Triangle', desc: 'Few odd harmonics. Soft, mellow, flute-like warm tone.' },
+              { type: 'sine', name: 'Sine', desc: 'Pure fundamental frequency. Smooth, round, sub-bass tone.' },
+            ].map((w) => (
+              <div key={w.type} className="p-3 rounded-lg bg-black/50 border border-amber-500/30 flex flex-col items-center text-center">
+                <div className="p-2.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20 mb-2 shadow">
+                  <WaveformIcon type={w.type as any} size={32} className="w-8 h-8" />
+                </div>
+                <span className="text-xs font-bold text-amber-300 font-mono mb-1">{w.name}</span>
+                <p className="text-[10px] text-slate-300 leading-tight">{w.desc}</p>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Live ADSR Visualizer Diagram on Envelope Steps */}
         {(currentStep.stepNumber === 8 || currentStep.stepNumber === 9) && (

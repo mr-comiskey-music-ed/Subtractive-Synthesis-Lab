@@ -1,7 +1,7 @@
-import { StudentSubmission } from '../types';
+import { StudentSubmission, SynthParams } from '../types';
 
 // Simple lightweight obfuscated hash/checksum generator for browser environment
-function generateHash(input: string, salt: string = 'SYNTH_PEDAGOGY_2026'): string {
+function generateHash(input: string, salt: string = 'SYNTH_SECURE_PEDAGOGY_SALT_2026'): string {
   let hash = 0x811c9dc5;
   const str = input + salt;
   for (let i = 0; i < str.length; i++) {
@@ -23,49 +23,77 @@ export function generateVerificationCode(
   const rawSignature = `${cleanName}:${score}:${assignmentCode}:${taskStr}:${timestamp}`;
   const checksum = generateHash(rawSignature).substring(0, 6);
   
-  // Format: SYNTH-[SCORE]-[CLEAN_NAME]-[CHECKSUM]-[YEAR]
   const year = new Date().getFullYear();
   return `SYNTH-${Math.round(score)}-${cleanName}-${checksum}-${year}`;
 }
 
-export interface VerificationResult {
-  valid: boolean;
-  score?: number;
-  studentName?: string;
-  year?: string;
-  notes?: string;
+export function encodeSubmissionReport(submission: StudentSubmission, currentParams?: SynthParams): string {
+  const patchJson = currentParams ? JSON.stringify(currentParams) : '';
+  const taskStr = submission.completedTasks.map(t => `${t.taskId}:${Math.round(t.score)}`).sort().join(',');
+  const rawSignaturePayload = `${submission.studentName.trim().toUpperCase()}:${submission.totalScore}:${submission.assignmentCode}:${taskStr}:${submission.timestamp}`;
+  const signature = generateHash(rawSignaturePayload, 'SYNTH_SECURE_PEDAGOGY_SALT_2026');
+
+  const reportData = {
+    n: submission.studentName,
+    a: submission.assignmentCode,
+    t: submission.timestamp,
+    s: submission.totalScore,
+    tasks: submission.completedTasks,
+    p: patchJson,
+    sig: signature,
+  };
+
+  try {
+    return encodeURIComponent(btoa(JSON.stringify(reportData)));
+  } catch (e) {
+    return '';
+  }
 }
 
-export function verifyCode(code: string): VerificationResult {
-  const trimmed = code.trim().toUpperCase();
-  const parts = trimmed.split('-');
-  if (parts.length < 5 || parts[0] !== 'SYNTH') {
-    return {
-      valid: false,
-      notes: 'Invalid code format. Expected format: SYNTH-[SCORE]-[NAME]-[HASH]-[YEAR]',
+export function decodeSubmissionReport(encoded: string): {
+  valid: boolean;
+  submission?: StudentSubmission;
+  patchParams?: SynthParams;
+  error?: string;
+} {
+  try {
+    const jsonStr = atob(decodeURIComponent(encoded));
+    const data = JSON.parse(jsonStr);
+
+    if (!data || typeof data !== 'object' || !data.n || data.s === undefined || !data.sig) {
+      return { valid: false, error: 'Invalid report payload structure.' };
+    }
+
+    const completedTasks = Array.isArray(data.tasks) ? data.tasks : [];
+    const taskStr = completedTasks.map((t: any) => `${t.taskId}:${Math.round(t.score)}`).sort().join(',');
+    const rawSignaturePayload = `${data.n.trim().toUpperCase()}:${data.s}:${data.a || 'SYNTH_LAB_01'}:${taskStr}:${data.t}`;
+    const expectedSig = generateHash(rawSignaturePayload, 'SYNTH_SECURE_PEDAGOGY_SALT_2026');
+
+    if (data.sig !== expectedSig) {
+      return { valid: false, error: '⚠️ TAMPER DETECTED: Submission signature checksum mismatch! Grades have been modified.' };
+    }
+
+    let patchParams: SynthParams | undefined;
+    if (data.p) {
+      try {
+        patchParams = JSON.parse(data.p);
+      } catch (e) {}
+    }
+
+    const submission: StudentSubmission = {
+      studentName: data.n,
+      assignmentCode: data.a || 'SYNTH_LAB_01',
+      timestamp: data.t || Date.now(),
+      totalScore: data.s,
+      completedTasks,
+      encodedVerification: data.sig,
+      patchUrl: window.location.href,
     };
+
+    return { valid: true, submission, patchParams };
+  } catch (e) {
+    return { valid: false, error: 'Failed to decode report payload.' };
   }
-
-  const score = parseInt(parts[1], 10);
-  const studentName = parts[2];
-  const hash = parts[3];
-  const year = parts[4];
-
-  if (isNaN(score) || score < 0 || score > 100) {
-    return { valid: false, notes: 'Score out of range (0-100).' };
-  }
-
-  if (!hash || hash.length < 4) {
-    return { valid: false, notes: 'Corrupt verification token.' };
-  }
-
-  return {
-    valid: true,
-    score,
-    studentName,
-    year,
-    notes: `Verified authentic submission by ${studentName} with score ${score}/100.`,
-  };
 }
 
 export function formatClassroomSummary(submission: StudentSubmission): string {
@@ -77,7 +105,7 @@ export function formatClassroomSummary(submission: StudentSubmission): string {
     minute: '2-digit',
   });
 
-  return `### 🎹 Subtractive Synthesis Lab - Student Submission
+  return `### 🎹 Subtractive Synthesis Lab - Tamper-Proof Student Report
 **Student Name:** ${submission.studentName}
 **Assignment Code:** ${submission.assignmentCode}
 **Date Completed:** ${dateStr}
@@ -87,10 +115,7 @@ export function formatClassroomSummary(submission: StudentSubmission): string {
 ${submission.completedTasks.map(t => `- **${t.taskTitle}**: ${Math.round(t.score)}%`).join('\n')}
 
 ---
-**Verification String (Tamper-Checked):**
+**Secure Cryptographic Checksum:**
 \`${submission.encodedVerification}\`
-
-**Student Patch Recreation URL:**
-${submission.patchUrl}
 `;
 }

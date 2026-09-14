@@ -9,23 +9,23 @@ export const DEFAULT_SYNTH_PARAMS: SynthParams = {
   vco1Semi: 0,
   vco1Fine: 0,
   vco1Level: 0.8,
-  vco1PulseWidth: 0.5,
+  vco1PulseWidth: 0,
 
   // VCO 2
   vco2Waveform: 'square',
   vco2Octave: 0,
   vco2Semi: 0,
   vco2Fine: 7,
-  vco2Level: 0.4,
-  vco2PulseWidth: 0.5,
+  vco2Level: 0,
+  vco2PulseWidth: 0,
 
   // Noise & Mix
   noiseLevel: 0,
   oscBalance: 0,
 
   // VCF
-  filterCutoff: 3500,
-  filterResonance: 3,
+  filterCutoff: 20000,
+  filterResonance: 0.1,
   filterEnvAmount: 40,
   filterKeyTracking: 0.5,
   filterRolloff: -24,
@@ -896,7 +896,7 @@ export const BLIND_TEST_CHALLENGES: BlindTestChallenge[] = [
       params: {
         ...DEFAULT_SYNTH_PARAMS,
         vco1Waveform: 'square',
-        lfoDestination: 'pw',
+        lfoDestination: 'cutoff',
         lfoDepth: 0.5,
         lfoRate: 1.8,
       }
