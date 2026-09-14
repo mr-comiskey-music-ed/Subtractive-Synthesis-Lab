@@ -1,6 +1,7 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { SubtractiveEngine } from '../audio/synthEngine';
 import { ThemeMode, SynthParams } from '../types';
+import { Maximize2, Minimize2 } from 'lucide-react';
 
 interface FilterVisualizerProps {
   engine: SubtractiveEngine;
@@ -10,6 +11,7 @@ interface FilterVisualizerProps {
 
 export const FilterVisualizer: React.FC<FilterVisualizerProps> = ({ engine, theme, height = 130 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const [isFullScreen, setIsFullScreen] = useState(false);
   const animFrameId = useRef<number | null>(null);
 
   useEffect(() => {
@@ -75,7 +77,7 @@ export const FilterVisualizer: React.FC<FilterVisualizerProps> = ({ engine, them
         const freq = Math.pow(10, fLog);
 
         const w = freq / Math.max(20, cutoff);
-        const poles = rolloff === -24 ? 2 : 1;
+        const poles = rolloff === -24 ? 4 : 2;
         
         const denom = Math.sqrt(Math.pow(1 - w * w, poles) + Math.pow(w / Q, 2));
         let gain = 1 / Math.max(0.01, denom);
@@ -146,31 +148,54 @@ export const FilterVisualizer: React.FC<FilterVisualizerProps> = ({ engine, them
         cancelAnimationFrame(animFrameId.current);
       }
     };
-  }, [engine, theme]);
+  }, [engine, theme, isFullScreen]);
 
-  return (
-    <div
-      id="filter-visualizer-card"
-      className={`relative rounded-lg overflow-hidden border shadow-inner mb-3 transition-all ${
+  const containerClasses = isFullScreen
+    ? "fixed inset-4 md:inset-12 z-50 flex flex-col p-4 bg-slate-950 border-2 border-amber-500 shadow-2xl rounded-2xl"
+    : `relative rounded-lg overflow-hidden border shadow-inner mb-3 transition-all ${
         theme === 'hardware-bench'
           ? 'bg-[#060a08] border-[#1f2923] shadow-black/80'
           : 'bg-[#050807] border-[#18231d] shadow-black/80'
-      }`}
-    >
-      <div className="absolute top-2 left-3 z-10 flex items-center gap-2 pointer-events-none">
-        <span className="inline-block w-2 h-2 rounded-full bg-amber-400 animate-pulse shadow-[0_0_8px_#f59e0b]" />
-        <span className="text-[11px] uppercase font-mono tracking-widest text-amber-300/95 font-bold">
-          VCF FILTER RESPONSE
-        </span>
-      </div>
+      }`;
 
-      <canvas
-        ref={canvasRef}
-        width={640}
-        height={height}
-        className="w-full block"
-        style={{ imageRendering: 'pixelated' }}
-      />
-    </div>
+  return (
+    <>
+      {isFullScreen && (
+        <div 
+          className="fixed inset-0 bg-black/80 backdrop-blur-sm z-40" 
+          onClick={() => setIsFullScreen(false)} 
+        />
+      )}
+      <div
+        id="filter-visualizer-card"
+        className={containerClasses}
+        onDoubleClick={() => setIsFullScreen(!isFullScreen)}
+        title="Double-click to toggle full screen"
+      >
+        <div className="absolute top-2 left-3 z-10 flex items-center gap-2 pointer-events-none">
+          <span className="text-[11px] uppercase font-mono tracking-widest text-amber-300/95 font-bold">
+            FILTER
+          </span>
+        </div>
+
+        {/* Fullscreen Toggle Button at Top Right */}
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); setIsFullScreen(!isFullScreen); }}
+          className="absolute top-2 right-2.5 z-10 p-1 rounded bg-black/70 hover:bg-amber-500 hover:text-black text-amber-400 border border-amber-800/60 shadow transition-colors"
+          title={isFullScreen ? "Exit Full Screen" : "Expand to Full Screen"}
+        >
+          {isFullScreen ? <Minimize2 className="w-3 h-3" /> : <Maximize2 className="w-3 h-3" />}
+        </button>
+
+        <canvas
+          ref={canvasRef}
+          width={isFullScreen ? 1200 : 640}
+          height={isFullScreen ? 450 : height}
+          className="w-full block flex-1"
+          style={{ imageRendering: 'pixelated' }}
+        />
+      </div>
+    </>
   );
 };

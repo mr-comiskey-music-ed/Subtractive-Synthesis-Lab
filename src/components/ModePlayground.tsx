@@ -6,7 +6,6 @@ import {
   Play,
   Square,
   Share2,
-  BookmarkPlus,
   Radio,
   Download,
   Flame,
@@ -130,21 +129,6 @@ export const ModePlayground: React.FC<ModePlaygroundProps> = ({
     setTimeout(() => setCopiedLink(false), 2500);
   };
 
-  // Save current settings as custom preset
-  const handleSavePatch = () => {
-    const name = prompt('Name your custom synth patch:', 'My Custom Sound');
-    if (!name) return;
-    const newPreset: Preset = {
-      id: `custom-${Date.now()}`,
-      name,
-      category: 'Lead',
-      description: 'Custom user designed patch in Playground.',
-      params: { ...params },
-    };
-    setSavedPresets([...savedPresets, newPreset]);
-    setActivePresetId(newPreset.id);
-  };
-
   return (
     <div id="mode-playground-bar" className="mb-4 space-y-3">
       {/* Top Playground Control Rack */}
@@ -170,16 +154,6 @@ export const ModePlayground: React.FC<ModePlaygroundProps> = ({
               </option>
             ))}
           </select>
-
-          <button
-            type="button"
-            onClick={handleSavePatch}
-            className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-mono flex items-center gap-1 border border-white/10 transition-colors"
-            title="Save current patch to browser"
-          >
-            <BookmarkPlus className="w-3.5 h-3.5 text-amber-400" />
-            Save
-          </button>
 
           <button
             type="button"
@@ -278,9 +252,6 @@ export const ModePlayground: React.FC<ModePlaygroundProps> = ({
               <Zap className={`w-3.5 h-3.5 ${arpEnabled ? 'fill-current' : ''}`} />
               ARP: {arpEnabled ? 'ON (ACTIVE)' : 'OFF'}
             </button>
-            <span className="text-[11px] font-mono text-slate-400">
-              (Single held note will repeat notes in sync!)
-            </span>
           </div>
 
           {/* BPM & Tap Tempo */}

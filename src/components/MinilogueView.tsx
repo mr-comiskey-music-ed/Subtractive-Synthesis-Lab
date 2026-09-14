@@ -6,6 +6,7 @@ import { Visualizer } from './Visualizer';
 import { FilterVisualizer } from './FilterVisualizer';
 import { AdsrVisualizer } from './AdsrVisualizer';
 import { SubtractiveEngine } from '../audio/synthEngine';
+import { WaveformIcon } from './WaveformIcons';
 
 interface MinilogueViewProps {
   params: SynthParams;
@@ -92,10 +93,10 @@ export const MinilogueView: React.FC<MinilogueViewProps> = ({
                   id="mini-vco1-wave"
                   label=""
                   options={[
-                    { label: 'Saw', value: 'sawtooth', short: 'SAW' },
-                    { label: 'Tri', value: 'triangle', short: 'TRI' },
-                    { label: 'Sqr', value: 'square', short: 'SQR' },
-                    { label: 'Sin', value: 'sine', short: 'SIN' },
+                    { label: 'Sawtooth', value: 'sawtooth', title: 'Sawtooth', icon: <WaveformIcon type="sawtooth" /> },
+                    { label: 'Square', value: 'square', title: 'Square', icon: <WaveformIcon type="square" /> },
+                    { label: 'Triangle', value: 'triangle', title: 'Triangle', icon: <WaveformIcon type="triangle" /> },
+                    { label: 'Sine', value: 'sine', title: 'Sine', icon: <WaveformIcon type="sine" /> },
                   ]}
                   value={params.vco1Waveform}
                   theme="hardware-bench"
@@ -136,17 +137,16 @@ export const MinilogueView: React.FC<MinilogueViewProps> = ({
                     id="mini-vco1-pw"
                     label="Shape"
                     section="vco"
-                    value={params.vco1PulseWidth}
-                    min={0.1}
-                    max={0.9}
-                    step={0.01}
-                    defaultValue={0.5}
+                    value={params.vco1PulseWidth * 100}
+                    min={0}
+                    max={100}
+                    step={1}
+                    defaultValue={0}
                     unit="%"
                     theme="hardware-bench"
-                    lfoModulated={params.lfoDestination === 'pw' && params.lfoDepth > 0}
                     lfoDepth={params.lfoDepth}
                     onChange={(v) => {
-                      onParamChange('vco1PulseWidth', v);
+                      onParamChange('vco1PulseWidth', v / 100);
                       if (params.vco1Waveform !== 'square') {
                         onParamChange('vco1Waveform', 'square');
                       }
@@ -169,10 +169,11 @@ export const MinilogueView: React.FC<MinilogueViewProps> = ({
                   id="mini-vco2-wave"
                   label=""
                   options={[
-                    { label: 'Saw', value: 'sawtooth', short: 'SAW' },
-                    { label: 'Tri', value: 'triangle', short: 'TRI' },
-                    { label: 'Sqr', value: 'square', short: 'SQR' },
-                    { label: 'Noise', value: 'noise', short: 'NOI' },
+                    { label: 'Sawtooth', value: 'sawtooth', title: 'Sawtooth', icon: <WaveformIcon type="sawtooth" /> },
+                    { label: 'Square', value: 'square', title: 'Square', icon: <WaveformIcon type="square" /> },
+                    { label: 'Triangle', value: 'triangle', title: 'Triangle', icon: <WaveformIcon type="triangle" /> },
+                    { label: 'Sine', value: 'sine', title: 'Sine', icon: <WaveformIcon type="sine" /> },
+                    { label: 'Noise', value: 'noise', title: 'Noise', icon: <WaveformIcon type="noise" /> },
                   ]}
                   value={params.vco2Waveform}
                   theme="hardware-bench"
@@ -259,7 +260,7 @@ export const MinilogueView: React.FC<MinilogueViewProps> = ({
           {/* VCF Filter Section */}
           <div
             id="minilogue-vcf-section"
-            className={`lg:col-span-3 rounded-xl p-3 border-2 transition-all flex flex-col justify-between ${
+            className={`lg:col-span-3 rounded-xl p-2 border-2 transition-all flex flex-col justify-between ${
               isHighlighted('filter')
                 ? 'border-red-500 bg-red-50/50 shadow-md ring-2 ring-red-400'
                 : 'border-slate-400/40 bg-white/40'
@@ -285,7 +286,7 @@ export const MinilogueView: React.FC<MinilogueViewProps> = ({
               </div>
 
               {/* Big Cutoff & Resonance with red pointers */}
-              <div className="flex items-center justify-around mb-3">
+              <div className="flex items-center justify-around mb-2">
                 <Knob
                   id="mini-filter-cutoff"
                   label="Cutoff"
@@ -316,7 +317,7 @@ export const MinilogueView: React.FC<MinilogueViewProps> = ({
                 />
               </div>
 
-              <div className="flex items-center justify-around pt-2 border-t border-slate-300">
+              <div className="flex items-center justify-around pt-1 pb-2 border-t border-slate-300">
                 <Knob
                   id="mini-filter-env"
                   label="EG Int"
@@ -344,12 +345,14 @@ export const MinilogueView: React.FC<MinilogueViewProps> = ({
                   onChange={(v) => onParamChange('filterKeyTracking', v / 100)}
                 />
               </div>
+
+              {/* Minilogue OLED Display & Filter Visualizer */}
+              <FilterVisualizer engine={engine} theme="hardware-bench" height={220} />
             </div>
 
-            {/* Minilogue OLED Display & Filter Visualizer */}
-            <div className="mt-3 space-y-3">
-              <FilterVisualizer engine={engine} theme="hardware-bench" height={210} />
-              <Visualizer engine={engine} theme="hardware-bench" height={250} />
+            {/* Real-time Spectrometer */}
+            <div className="mt-2">
+              <Visualizer engine={engine} theme="hardware-bench" height={280} />
             </div>
           </div>
 
@@ -550,15 +553,15 @@ export const MinilogueView: React.FC<MinilogueViewProps> = ({
 
               {/* LFO Controls */}
               <div className="p-2 rounded bg-black/5 border border-black/10 mb-3">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-[10px] font-bold text-cyan-900 font-mono">SHAPE</span>
+                <div className="flex items-center justify-end mb-2">
                   <ToggleSwitch<any>
                     id="mini-lfo-wave"
                     label=""
                     options={[
-                      { label: 'Saw', value: 'sawtooth', short: 'SAW' },
-                      { label: 'Tri', value: 'triangle', short: 'TRI' },
-                      { label: 'Sqr', value: 'square', short: 'SQR' },
+                      { label: 'Sine', value: 'sine', title: 'Sine', icon: <WaveformIcon type="sine" /> },
+                      { label: 'Triangle', value: 'triangle', title: 'Triangle', icon: <WaveformIcon type="triangle" /> },
+                      { label: 'Sawtooth', value: 'sawtooth', title: 'Sawtooth', icon: <WaveformIcon type="sawtooth" /> },
+                      { label: 'Square', value: 'square', title: 'Square', icon: <WaveformIcon type="square" /> },
                     ]}
                     value={params.lfoWaveform}
                     theme="hardware-bench"
@@ -603,7 +606,6 @@ export const MinilogueView: React.FC<MinilogueViewProps> = ({
                     options={[
                       { label: 'Pitch', value: 'pitch', short: 'PITCH' },
                       { label: 'Cutoff', value: 'cutoff', short: 'CUTOFF' },
-                      { label: 'PWM', value: 'pw', short: 'PWM' },
                     ]}
                     value={params.lfoDestination}
                     theme="hardware-bench"

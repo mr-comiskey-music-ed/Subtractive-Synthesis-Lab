@@ -4,7 +4,7 @@ import { ThemeMode } from '../types';
 interface ToggleSwitchProps<T> {
   id: string;
   label: string;
-  options: { label: string; value: T; short?: string }[];
+  options: { label: string; value: T; short?: string; icon?: React.ReactNode; title?: string }[];
   value: T;
   theme: ThemeMode;
   orientation?: 'vertical' | 'horizontal';
@@ -59,11 +59,12 @@ export function ToggleSwitch<T extends string | number>({
             <button
               key={idx}
               type="button"
+              title={opt.title || opt.label}
               onClick={(e) => {
                 e.stopPropagation();
                 onChange(opt.value);
               }}
-              className={`text-[9px] font-mono uppercase px-1 py-0.5 rounded transition-all ${
+              className={`text-[9px] font-mono uppercase px-1 py-0.5 rounded transition-all flex items-center justify-center ${
                 isActive
                   ? theme === 'hardware-bench'
                     ? 'bg-slate-900 text-amber-300 font-bold shadow-sm'
@@ -73,7 +74,7 @@ export function ToggleSwitch<T extends string | number>({
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
-              {opt.short || opt.label}
+              {opt.icon || opt.short || opt.label}
             </button>
           );
         })}

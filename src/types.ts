@@ -1,6 +1,6 @@
 export type WaveformType = 'sine' | 'triangle' | 'sawtooth' | 'square' | 'noise';
 
-export type LfoDestination = 'pitch' | 'cutoff' | 'pw';
+export type LfoDestination = 'pitch' | 'cutoff';
 
 export type FilterType = 'lowpass';
 export type FilterRolloff = -12 | -24;

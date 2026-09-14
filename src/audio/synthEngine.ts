@@ -191,7 +191,7 @@ export class SubtractiveEngine {
     if (this.currentParams.vco1Waveform === 'square') {
       this.osc1 = new Tone.PulseOscillator({
         frequency: this.lastTriggeredFrequency,
-        width: this.currentParams.vco1PulseWidth,
+        width: Math.max(0.01, Math.min(0.99, this.currentParams.vco1PulseWidth)),
       });
     } else if (this.currentParams.vco1Waveform !== 'noise') {
       this.osc1 = new Tone.Oscillator({
@@ -204,7 +204,7 @@ export class SubtractiveEngine {
     if (this.currentParams.vco2Waveform === 'square') {
       this.osc2 = new Tone.PulseOscillator({
         frequency: this.lastTriggeredFrequency,
-        width: this.currentParams.vco2PulseWidth,
+        width: Math.max(0.01, Math.min(0.99, this.currentParams.vco2PulseWidth)),
       });
     } else if (this.currentParams.vco2Waveform !== 'noise') {
       this.osc2 = new Tone.Oscillator({
@@ -241,14 +241,14 @@ export class SubtractiveEngine {
     if (params.vco1Waveform !== undefined && this.osc1) {
       this.rebuildOscillators();
     } else if (params.vco1PulseWidth !== undefined && this.osc1 instanceof Tone.PulseOscillator) {
-      this.osc1.width.rampTo(params.vco1PulseWidth, 0.05);
+      this.osc1.width.rampTo(Math.max(0.01, Math.min(0.99, params.vco1PulseWidth)), 0.05);
     }
 
     // VCO 2 Waveform / Pulsewidth
     if (params.vco2Waveform !== undefined && this.osc2) {
       this.rebuildOscillators();
     } else if (params.vco2PulseWidth !== undefined && this.osc2 instanceof Tone.PulseOscillator) {
-      this.osc2.width.rampTo(params.vco2PulseWidth, 0.05);
+      this.osc2.width.rampTo(Math.max(0.01, Math.min(0.99, params.vco2PulseWidth)), 0.05);
     }
 
     // Mixer
@@ -520,7 +520,10 @@ export class SubtractiveEngine {
           const inputs = midiAccess.inputs.values();
           let deviceName = 'Standard MIDI';
           for (const input of inputs) {
-            deviceName = input.name || 'MIDI Device';
+            const name = input.name || 'MIDI Device';
+            if (!name.includes('Logic Pro')) {
+              deviceName = name;
+            }
             input.onmidimessage = (msg) => this.handleMidiMessage(msg);
           }
           if (onStatus) onStatus(deviceName);
