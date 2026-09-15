@@ -119,3 +119,13 @@ ${submission.completedTasks.map(t => `- **${t.taskTitle}**: ${Math.round(t.score
 \`${submission.encodedVerification}\`
 `;
 }
+
+export function getBaseReportUrl(): string {
+  const hostname = window.location.hostname || '';
+  const isAppsScript = hostname.includes('googleusercontent.com') || hostname.includes('script.google.com') || !!(window as any).google?.script;
+  if (isAppsScript) {
+    return "https://script.google.com/macros/s/AKfycbz5mCjB0x4A2EesLkxDxVifjteKBg-wjTztFehvEtfot2ytr5wMb5dbF2W2J-qJtuee/exec";
+  }
+  return `${window.location.origin}${window.location.pathname}`;
+}
+
