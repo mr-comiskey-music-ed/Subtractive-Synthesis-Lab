@@ -58,6 +58,25 @@ export default function App() {
 
   // Initialize from URL params (e.g. shared patch, teacher assignment, shared report)
   useEffect(() => {
+    const handleReportParam = (reportParam: string) => {
+      if (!reportParam) return;
+      const decoded = decodeSubmissionReport(reportParam);
+      setSharedReport(decoded);
+      if (decoded.valid && decoded.submission) {
+        setCompletedTasks(decoded.submission.completedTasks);
+      }
+      setActiveMode('teacher');
+    };
+
+    const handleAssignmentParam = (assignParam: string, tasksParam?: string) => {
+      if (assignParam) setAssignmentCode(assignParam);
+      if (tasksParam) {
+        setAssignedTasks(tasksParam.split(','));
+        setActiveMode('challenges');
+      }
+    };
+
+    // 1. window.location.search
     const query = new URLSearchParams(window.location.search);
     const patchData = query.get('patch');
     if (patchData) {
@@ -73,21 +92,42 @@ export default function App() {
 
     const reportParam = query.get('report');
     if (reportParam) {
-      const decoded = decodeSubmissionReport(reportParam);
-      setSharedReport(decoded);
-      if (decoded.valid && decoded.submission) {
-        setCompletedTasks(decoded.submission.completedTasks);
-      }
-      setActiveMode('teacher');
+      handleReportParam(reportParam);
     }
 
     const assignParam = query.get('assignment');
     if (assignParam) {
-      setAssignmentCode(assignParam);
-      const tasksParam = query.get('tasks');
-      if (tasksParam) {
-        setAssignedTasks(tasksParam.split(','));
-        setActiveMode('challenges');
+      handleAssignmentParam(assignParam, query.get('tasks') || undefined);
+    }
+
+    // 2. window.serverParams (injected global object from server templates)
+    const serverParams = (window as any).serverParams;
+    if (serverParams && typeof serverParams === 'object') {
+      const rep = serverParams.report || serverParams.parameter?.report || serverParams.parameters?.report?.[0];
+      if (rep) handleReportParam(rep);
+
+      const assign = serverParams.assignment || serverParams.parameter?.assignment || serverParams.parameters?.assignment?.[0];
+      const tasks = serverParams.tasks || serverParams.parameter?.tasks || serverParams.parameters?.tasks?.[0];
+      if (assign) handleAssignmentParam(assign, tasks);
+    }
+
+    // 3. google.script.url.getLocation() (native Google Apps Script client API)
+    const googleScript = (window as any).google?.script;
+    if (googleScript?.url?.getLocation) {
+      try {
+        googleScript.url.getLocation((location: any) => {
+          const rep = location?.parameter?.report || location?.parameters?.report?.[0];
+          if (rep) {
+            handleReportParam(rep);
+          }
+          const assign = location?.parameter?.assignment || location?.parameters?.assignment?.[0];
+          const tasks = location?.parameter?.tasks || location?.parameters?.tasks?.[0];
+          if (assign) {
+            handleAssignmentParam(assign, tasks);
+          }
+        });
+      } catch (e) {
+        console.error('Error calling google.script.url.getLocation', e);
       }
     }
   }, [engine]);

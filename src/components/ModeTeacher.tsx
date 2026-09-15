@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { SynthParams, StudentSubmission } from '../types';
 import {
   generateVerificationCode,
   encodeSubmissionReport,
+  decodeSubmissionReport,
+  getBaseReportUrl,
 } from '../utils/verification';
 import {
   GraduationCap,
@@ -32,6 +34,49 @@ export const ModeTeacher: React.FC<ModeTeacherProps> = ({
   const [secureReportUrl, setSecureReportUrl] = useState<string>('');
   const [copiedLink, setCopiedLink] = useState<boolean>(false);
   const [showReportModal, setShowReportModal] = useState<boolean>(!!sharedReport);
+  const [manualReportInput, setManualReportInput] = useState<string>('');
+
+  // Reactive update when sharedReport changes asynchronously
+  useEffect(() => {
+    if (sharedReport) {
+      if (sharedReport.submission) {
+        setSubmission(sharedReport.submission);
+        const encodedReport = encodeSubmissionReport(sharedReport.submission, currentParams);
+        setSecureReportUrl(`${getBaseReportUrl()}?report=${encodedReport}`);
+      }
+      if (sharedReport.valid) {
+        setShowReportModal(true);
+      }
+    }
+  }, [sharedReport, currentParams]);
+
+  const handleManualLoadReport = () => {
+    if (!manualReportInput.trim()) return;
+    let param = manualReportInput.trim();
+    try {
+      if (param.includes('report=')) {
+        const urlObj = new URL(param.startsWith('http') ? param : `https://dummy.com?${param}`);
+        const rep = urlObj.searchParams.get('report');
+        if (rep) param = rep;
+      }
+    } catch (e) {
+      const match = param.match(/report=([^&]+)/);
+      if (match && match[1]) {
+        param = match[1];
+      }
+    }
+
+    const decoded = decodeSubmissionReport(param);
+    if (decoded.valid && decoded.submission) {
+      setSubmission(decoded.submission);
+      const encodedReport = encodeSubmissionReport(decoded.submission, currentParams);
+      setSecureReportUrl(`${getBaseReportUrl()}?report=${encodedReport}`);
+      setShowReportModal(true);
+      setManualReportInput('');
+    } else {
+      alert(`Failed to decode report: ${decoded.error || 'Invalid report code'}`);
+    }
+  };
 
   // Calculate student average score
   const totalScore =
@@ -63,7 +108,7 @@ export const ModeTeacher: React.FC<ModeTeacherProps> = ({
     };
 
     const encodedReport = encodeSubmissionReport(newSub, currentParams);
-    const url = `${window.location.origin}${window.location.pathname}?report=${encodedReport}`;
+    const url = `${getBaseReportUrl()}?report=${encodedReport}`;
 
     setSubmission(newSub);
     setSecureReportUrl(url);
@@ -71,7 +116,7 @@ export const ModeTeacher: React.FC<ModeTeacherProps> = ({
   };
 
   const handleCopyLink = () => {
-    const urlToCopy = secureReportUrl || window.location.href;
+    const urlToCopy = secureReportUrl || (submission ? `${getBaseReportUrl()}?report=${encodeSubmissionReport(submission, currentParams)}` : window.location.href);
     navigator.clipboard.writeText(urlToCopy);
     setCopiedLink(true);
     setTimeout(() => setCopiedLink(false), 2500);
@@ -96,6 +141,30 @@ export const ModeTeacher: React.FC<ModeTeacherProps> = ({
             <span className="text-lg font-mono font-bold text-amber-400 px-3 py-1 rounded bg-black/40 border border-amber-500/30">
               {totalScore} / 100
             </span>
+          </div>
+        </div>
+
+        {/* Manual Load Student Report Input */}
+        <div className="mb-6 p-4 rounded-xl bg-black/50 border border-amber-500/30 space-y-2">
+          <label className="block text-xs font-mono text-amber-300 font-bold uppercase tracking-wider">
+            Load Student Report (Paste Student URL or Report Code)
+          </label>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              placeholder="Paste student URL or raw ?report=... payload..."
+              value={manualReportInput}
+              onChange={(e) => setManualReportInput(e.target.value)}
+              className="flex-1 px-3 py-2 rounded-lg bg-black/70 text-slate-100 font-mono text-xs border border-slate-700 focus:outline-none focus:ring-1 focus:ring-amber-400"
+            />
+            <button
+              type="button"
+              onClick={handleManualLoadReport}
+              className="px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-black font-mono font-bold text-xs uppercase flex items-center gap-1.5 flex-shrink-0"
+            >
+              <ShieldCheck className="w-4 h-4" />
+              Load Report
+            </button>
           </div>
         </div>
 
