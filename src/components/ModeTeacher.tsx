@@ -14,6 +14,7 @@ import {
   X,
   Award,
   AlertTriangle,
+  Copy,
 } from 'lucide-react';
 
 interface ModeTeacherProps {
@@ -35,6 +36,11 @@ export const ModeTeacher: React.FC<ModeTeacherProps> = ({
   const [copiedLink, setCopiedLink] = useState<boolean>(false);
   const [showReportModal, setShowReportModal] = useState<boolean>(!!sharedReport);
   const [manualReportInput, setManualReportInput] = useState<string>('');
+  const [rawReportCode, setRawReportCode] = useState<string>(
+    sharedReport?.submission ? encodeSubmissionReport(sharedReport.submission, currentParams) : ''
+  );
+  const [copiedCode, setCopiedCode] = useState<boolean>(false);
+  const [verificationError, setVerificationError] = useState<string | null>(sharedReport?.error || null);
 
   // Reactive update when sharedReport changes asynchronously
   useEffect(() => {
@@ -42,16 +48,20 @@ export const ModeTeacher: React.FC<ModeTeacherProps> = ({
       if (sharedReport.submission) {
         setSubmission(sharedReport.submission);
         const encodedReport = encodeSubmissionReport(sharedReport.submission, currentParams);
+        setRawReportCode(encodedReport);
         setSecureReportUrl(`${getBaseReportUrl()}?report=${encodedReport}`);
       }
       if (sharedReport.valid) {
         setShowReportModal(true);
+      } else if (sharedReport.error) {
+        setVerificationError(sharedReport.error);
       }
     }
   }, [sharedReport, currentParams]);
 
   const handleManualLoadReport = () => {
     if (!manualReportInput.trim()) return;
+    setVerificationError(null);
     let param = manualReportInput.trim();
     try {
       if (param.includes('report=')) {
@@ -69,25 +79,26 @@ export const ModeTeacher: React.FC<ModeTeacherProps> = ({
     const decoded = decodeSubmissionReport(param);
     if (decoded.valid && decoded.submission) {
       setSubmission(decoded.submission);
+      setRawReportCode(param);
       const encodedReport = encodeSubmissionReport(decoded.submission, currentParams);
       setSecureReportUrl(`${getBaseReportUrl()}?report=${encodedReport}`);
       setShowReportModal(true);
       setManualReportInput('');
     } else {
-      alert(`Failed to decode report: ${decoded.error || 'Invalid report code'}`);
+      setVerificationError(decoded.error || '⚠️ TAMPER DETECTED: Invalid submission code or signature checksum mismatch.');
     }
   };
 
-  // Calculate student average score
+  // Calculate student score proportional to 30 total tasks
   const totalScore =
     sharedReport?.submission?.totalScore ??
     (completedTasks.length > 0
       ? Math.round(
-          completedTasks.reduce((acc, curr) => acc + curr.score, 0) / completedTasks.length
+          completedTasks.reduce((acc, curr) => acc + curr.score, 0) / 30
         )
       : 0);
 
-  // Lock and generate secure tamper-proof report link
+  // Lock and generate secure tamper-proof report code
   const handleLockSubmission = () => {
     if (!studentName.trim()) {
       alert('Please enter your full student name before locking your submission.');
@@ -111,8 +122,8 @@ export const ModeTeacher: React.FC<ModeTeacherProps> = ({
     const url = `${getBaseReportUrl()}?report=${encodedReport}`;
 
     setSubmission(newSub);
+    setRawReportCode(encodedReport);
     setSecureReportUrl(url);
-    setShowReportModal(true);
   };
 
   const handleCopyLink = () => {
@@ -120,6 +131,13 @@ export const ModeTeacher: React.FC<ModeTeacherProps> = ({
     navigator.clipboard.writeText(urlToCopy);
     setCopiedLink(true);
     setTimeout(() => setCopiedLink(false), 2500);
+  };
+
+  const handleCopySubmissionCode = () => {
+    if (!rawReportCode) return;
+    navigator.clipboard.writeText(rawReportCode);
+    setCopiedCode(true);
+    setTimeout(() => setCopiedCode(false), 2500);
   };
 
   return (
@@ -144,31 +162,7 @@ export const ModeTeacher: React.FC<ModeTeacherProps> = ({
           </div>
         </div>
 
-        {/* Manual Load Student Report Input */}
-        <div className="mb-6 p-4 rounded-xl bg-black/50 border border-amber-500/30 space-y-2">
-          <label className="block text-xs font-mono text-amber-300 font-bold uppercase tracking-wider">
-            Load Student Report (Paste Student URL or Report Code)
-          </label>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              placeholder="Paste student URL or raw ?report=... payload..."
-              value={manualReportInput}
-              onChange={(e) => setManualReportInput(e.target.value)}
-              className="flex-1 px-3 py-2 rounded-lg bg-black/70 text-slate-100 font-mono text-xs border border-slate-700 focus:outline-none focus:ring-1 focus:ring-amber-400"
-            />
-            <button
-              type="button"
-              onClick={handleManualLoadReport}
-              className="px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-black font-mono font-bold text-xs uppercase flex items-center gap-1.5 flex-shrink-0"
-            >
-              <ShieldCheck className="w-4 h-4" />
-              Load Report
-            </button>
-          </div>
-        </div>
-
-        {/* Name input & Lock & Generate Link button */}
+        {/* Name input & Lock & Generate Code button */}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end mb-6">
           <div className="md:col-span-5">
             <label className="block text-xs font-mono text-slate-300 font-semibold mb-1.5">
@@ -199,7 +193,7 @@ export const ModeTeacher: React.FC<ModeTeacherProps> = ({
               className="w-full py-2.5 px-3 rounded-lg bg-amber-500 hover:bg-amber-400 text-black font-mono font-bold text-xs uppercase flex items-center justify-center gap-1.5 shadow-[0_0_12px_rgba(245,158,11,0.3)] active:scale-95 transition-all"
             >
               <ShieldCheck className="w-4 h-4" />
-              Lock & Generate Link
+              Lock & Generate Code
             </button>
           </div>
         </div>
@@ -243,41 +237,93 @@ export const ModeTeacher: React.FC<ModeTeacherProps> = ({
               )}
             </div>
 
-            {/* Share Link for Teacher */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2 border-t border-white/10">
-              <span className="text-xs font-mono text-slate-300">
-                Open or copy secure tamper-proof report popup link for your teacher:
-              </span>
+            {/* Google Classroom Submission Code Box */}
+            <div className="space-y-3 pt-3 border-t border-white/10">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-mono text-emerald-300 font-bold uppercase tracking-wider">
+                  Student Submission Code for Google Classroom:
+                </label>
+                <span className="text-[10px] font-mono text-slate-400">
+                  Select & copy code below
+                </span>
+              </div>
 
-              <div className="flex items-center gap-2 w-full sm:w-auto">
-                <button
-                  type="button"
-                  onClick={() => setShowReportModal(true)}
-                  className="px-4 py-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-300 font-mono font-bold text-xs uppercase flex items-center justify-center gap-1.5 border border-amber-500/30 flex-shrink-0"
-                >
-                  <Award className="w-4 h-4" />
-                  View Report
-                </button>
+              <div className="relative">
+                <textarea
+                  readOnly
+                  rows={3}
+                  value={rawReportCode}
+                  onClick={(e) => (e.target as HTMLTextAreaElement).select()}
+                  className="w-full px-3 py-2 rounded-lg bg-black/90 text-emerald-400 font-mono text-xs border border-emerald-500/40 focus:outline-none focus:ring-1 focus:ring-emerald-400 select-all"
+                />
+              </div>
 
-                <button
-                  type="button"
-                  onClick={handleCopyLink}
-                  className="w-full sm:w-auto px-5 py-2.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-black font-mono font-bold text-xs uppercase flex items-center justify-center gap-2 shadow-[0_0_12px_rgba(16,185,129,0.3)] active:scale-95 transition-all flex-shrink-0"
-                >
-                  {copiedLink ? (
-                    <>
-                      <Check className="w-4 h-4" />
-                      Link Copied!
-                    </>
-                  ) : (
-                    <>
-                      <Share2 className="w-4 h-4" />
-                      Copy Link
-                    </>
-                  )}
-                </button>
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <p className="text-xs font-mono text-slate-300 max-w-md flex-1">
+                  Copy this code and paste it into your Google Classroom assignment or send it to your teacher.
+                </p>
+
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                  <button
+                    type="button"
+                    onClick={() => setShowReportModal(true)}
+                    className="px-4 py-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-300 font-mono font-bold text-xs uppercase flex items-center justify-center gap-1.5 border border-amber-500/30 flex-shrink-0"
+                  >
+                    <Award className="w-4 h-4" />
+                    View Report
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleCopySubmissionCode}
+                    className="w-full sm:w-auto px-5 py-2.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-black font-mono font-bold text-xs uppercase flex items-center justify-center gap-2 shadow-[0_0_12px_rgba(16,185,129,0.3)] active:scale-95 transition-all flex-shrink-0"
+                  >
+                    {copiedCode ? (
+                      <>
+                        <Check className="w-4 h-4" />
+                        Code Copied!
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-4 h-4" />
+                        Copy Code
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Compact Teacher Code Check at the bottom */}
+        <div className="mt-6 pt-4 border-t border-white/10 flex flex-col sm:flex-row items-center gap-2">
+          <span className="text-xs font-mono text-amber-400 font-bold whitespace-nowrap">
+            Teacher Code Check:
+          </span>
+          <input
+            type="text"
+            placeholder="Paste student submission code or URL..."
+            value={manualReportInput}
+            onChange={(e) => {
+              setManualReportInput(e.target.value);
+              setVerificationError(null);
+            }}
+            className="flex-1 px-3 py-1.5 rounded bg-black/70 text-slate-100 font-mono text-xs border border-amber-500/30 focus:outline-none focus:ring-1 focus:ring-amber-400"
+          />
+          <button
+            type="button"
+            onClick={handleManualLoadReport}
+            className="px-3 py-1.5 rounded bg-amber-500 hover:bg-amber-400 text-black font-mono font-bold text-xs uppercase flex items-center gap-1 flex-shrink-0"
+          >
+            <ShieldCheck className="w-3.5 h-3.5" />
+            Verify
+          </button>
+        </div>
+        {verificationError && (
+          <div className="mt-2 p-2 rounded bg-red-950/80 border border-red-500/60 text-red-200 text-xs font-mono flex items-center gap-2">
+            <AlertTriangle className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />
+            <span>{verificationError}</span>
           </div>
         )}
       </div>
@@ -336,20 +382,7 @@ export const ModeTeacher: React.FC<ModeTeacherProps> = ({
               </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-white/10">
-              <span className="text-xs font-mono text-slate-400 truncate max-w-md">
-                Secure Link: <code className="text-amber-300">{secureReportUrl || window.location.href}</code>
-              </span>
 
-              <button
-                type="button"
-                onClick={handleCopyLink}
-                className="w-full sm:w-auto px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-black font-mono font-bold text-xs uppercase flex items-center justify-center gap-1.5 flex-shrink-0"
-              >
-                {copiedLink ? <Check className="w-4 h-4" /> : <Share2 className="w-4 h-4" />}
-                {copiedLink ? 'Link Copied!' : 'Copy Link'}
-              </button>
-            </div>
           </div>
         </div>
       )}
