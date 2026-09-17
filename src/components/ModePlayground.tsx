@@ -13,6 +13,7 @@ import {
   Music,
   Activity,
   Zap,
+  Copy,
 } from 'lucide-react';
 
 interface ModePlaygroundProps {
@@ -46,8 +47,8 @@ export const ModePlayground: React.FC<ModePlaygroundProps> = ({
   const [recordingProgress, setRecordingProgress] = useState<number>(0);
   const [recordedAudioUrl, setRecordedAudioUrl] = useState<string | null>(null);
 
-  // Preset / Share State
-  const [copiedLink, setCopiedLink] = useState<boolean>(false);
+  // Preset / Patch Code State
+  const [copiedCode, setCopiedCode] = useState<boolean>(false);
   const [savedPresets, setSavedPresets] = useState<Preset[]>(INITIAL_PRESETS);
   const [activePresetId, setActivePresetId] = useState<string>('init-patch');
 
@@ -119,14 +120,44 @@ export const ModePlayground: React.FC<ModePlaygroundProps> = ({
     }, durationSeconds * 1000);
   };
 
-  // Patch Share via Link
-  const handleSharePatch = () => {
+  // Copy Patch Base64 Code
+  const handleCopyPatchCode = () => {
     const jsonStr = JSON.stringify(params);
-    const encoded = encodeURIComponent(btoa(jsonStr));
-    const shareUrl = `${window.location.origin}${window.location.pathname}?patch=${encoded}`;
-    navigator.clipboard.writeText(shareUrl);
-    setCopiedLink(true);
-    setTimeout(() => setCopiedLink(false), 2500);
+    const encoded = btoa(jsonStr);
+    navigator.clipboard.writeText(encoded);
+    setCopiedCode(true);
+    setTimeout(() => setCopiedCode(false), 2500);
+  };
+
+  // Paste & Import Patch Base64 Code
+  const handleImportPatchCode = () => {
+    const code = window.prompt("Paste synthesizer patch base64 code:");
+    if (!code) return;
+    try {
+      let cleaned = code.trim();
+      if (cleaned.includes('patch=')) {
+        const parts = cleaned.split('patch=');
+        if (parts[1]) {
+          cleaned = parts[1].split('&')[0];
+        }
+      }
+      let jsonStr = '';
+      try {
+        jsonStr = atob(cleaned);
+      } catch (err) {
+        jsonStr = atob(decodeURIComponent(cleaned));
+      }
+      const parsedParams = JSON.parse(jsonStr);
+      onLoadPreset({
+        id: 'imported-' + Date.now(),
+        name: 'Imported Patch',
+        category: 'Custom',
+        params: parsedParams,
+      });
+      alert("Synth patch imported successfully!");
+    } catch (e) {
+      alert("Invalid patch code. Please ensure you copied the exact base64 code.");
+    }
   };
 
   return (
@@ -134,7 +165,7 @@ export const ModePlayground: React.FC<ModePlaygroundProps> = ({
       {/* Top Playground Control Rack */}
       <div className="rounded-xl bg-[#12151b] border border-[#2b3342] p-3 shadow-xl text-slate-100 flex flex-wrap items-center justify-between gap-3">
         {/* Left: Presets Selection */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <Music className="w-4 h-4 text-amber-400" />
           <span className="text-xs font-mono font-bold text-slate-300">PRESETS:</span>
           <select
@@ -157,27 +188,37 @@ export const ModePlayground: React.FC<ModePlaygroundProps> = ({
 
           <button
             type="button"
-            onClick={handleSharePatch}
+            onClick={handleCopyPatchCode}
             className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-mono flex items-center gap-1 border border-white/10 transition-colors"
-            title="Copy shareable patch URL link"
+            title="Copy patch base64 code"
           >
-            {copiedLink ? (
+            {copiedCode ? (
               <>
                 <Check className="w-3.5 h-3.5 text-emerald-400" />
-                <span className="text-emerald-300">Link Copied!</span>
+                <span className="text-emerald-300">Code Copied!</span>
               </>
             ) : (
               <>
-                <Share2 className="w-3.5 h-3.5 text-amber-400" />
-                <span>Share Link</span>
+                <Copy className="w-3.5 h-3.5 text-amber-400" />
+                <span>Copy Patch Code</span>
               </>
             )}
+          </button>
+
+          <button
+            type="button"
+            onClick={handleImportPatchCode}
+            className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-mono flex items-center gap-1 border border-white/10 transition-colors"
+            title="Paste and import patch base64 code"
+          >
+            <Download className="w-3.5 h-3.5 text-amber-400" />
+            <span>Paste & Import Patch Code</span>
           </button>
         </div>
 
         {/* Center: 5s Snippet Recording Rack */}
         <div className="flex items-center gap-2 bg-black/40 px-3 py-1.5 rounded-lg border border-white/10">
-          <Radio className={`w-4 h-4 ${isRecording ? 'text-red-500 animate-ping' : 'text-red-400'}`} />
+          <div className={`w-3 h-3 rounded-full bg-red-500 ${isRecording ? 'animate-ping' : ''}`} />
           <button
             type="button"
             onClick={handleRecordSnippet}
@@ -188,7 +229,7 @@ export const ModePlayground: React.FC<ModePlaygroundProps> = ({
                 : 'bg-red-500/20 hover:bg-red-500/30 text-red-300 border border-red-500/40'
             }`}
           >
-            {isRecording ? 'Recording 5s...' : 'Record 5s Snippet'}
+            {isRecording ? 'Recording 5sec...' : 'Record 5sec Snippet'}
           </button>
 
           {isRecording && (
